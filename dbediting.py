@@ -1,25 +1,32 @@
 from Database_Functions.MaindbFunctions import *
-from Database_Functions.OperationdbFunctions import *
+from Database_Functions.ResponsedbFunctions import *
 from Database_Functions.RankdbFunctions import *
 
 def create_table():
-    conn, cur = get_conn()
-    cur.execute('''CREATE TABLE IF NOT EXISTS quota_blocks (
-                    block_num INTEGER,
-                    start_date INTEGER,
-                    end_date INTEGER,
-                    completed INTEGER
+    conn, cur = opget_conn()
+    cur.execute('''CREATE TABLE IF NOT EXISTS response_data (
+                    res_ID INTEGER PRIMARY KEY,
+                    res_type TEXT,
+                    res_trello_link TEXT,
+                    res_start_time INTEGER,
+                    res_end_time INTEGER,
+                    concluded INTEGER,
+                    started INTEGER,
+                    spontaneous INTEGER,
+                    cancelled INTEGER,
+                    ann_msg_link TEXT,
+                    start_msg_link TEXT,
+                    end_msg_link TEXT,
+                    ringleader_id INTEGER
                 );''')
     conn.commit()
     print("Made table")
 
 def delete_table(table):
-    conn, cur = get_conn()
+    conn, cur = opget_conn()
     cur.execute(f"DROP TABLE {table}")
     conn.commit()
     print(f"Deleted {table}")
-    
-#delete_table("quota_table") # "users" "op_table"
 
 def rename_column(table_name, old_column_name, new_column_name):
     conn, cur = get_conn()
@@ -36,7 +43,7 @@ def rename_column(table_name, old_column_name, new_column_name):
         conn.close()
 
 def edit_table(table, new_colum, new_column_type):
-    conn, cur = get_conn()
+    conn, cur = userget_conn()
     cur.execute(f"ALTER TABLE {table} ADD COLUMN {new_colum} {new_column_type}")
     conn.commit()
     print("Added colum")
@@ -54,11 +61,12 @@ def rename_colum():
     print("Renamed colum")
 
 def remove_column(table_name, column_name):
-    conn, cur = get_conn()
+    conn, cur = userget_conn()
     cur.execute(f"PRAGMA foreign_keys=off;")
     cur.execute(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
     conn.commit()
     print("Removed column")
+
 
 def remove_primary_column(database_name, table_name, column_name):
     conn = sqlite3.connect(database_name)

@@ -1,35 +1,71 @@
 from trello import TrelloClient
-from trello.card import Card
-import datetime
+from datetime import datetime
 
-TRELLO_API_KEY = "7728134341a69e810f630856c7871231"
-TOKEN = "ATTAe37a6d6d54f7fde47ce9465d473b6f8d29e71628dd72833714767652b2f29e19CE4EA758"
+TRELLO_API_KEY = "611905fd240d63a804e36a4fe7c9654e"
+TOKEN = "ATTA69143a1d63dd6eebe2b03a5715125045652f744b225c8f2fe7fe140e728a08c24D72615E"
 
 trello = TrelloClient(api_key=TRELLO_API_KEY, token=TOKEN)
-opsched = trello.get_board("631e1f2aee06a600708e6a2b")
+boardid = "6437e2978421d13cd9394a5d"
+response_trello = trello.get_board(boardid)
 
-def unix_to_datetime(unix_time):
-    return datetime.datetime.fromtimestamp(int(unix_time))
+def get_trello_id(discord_id):
+    data = {
+        '776226471575683082': '615a267981e91589231eac1c', # Blue
+        '530249755264155649': '6363f1ca2bad7b022333d37f', # DrWolf
+        '505679486994612246': '630c4e722badc40052a30c37', # Ellusive
+        '1096140994556215407': '641e0c7656e96ac475f5ae9a', # TRU Helper
+        '367338968661884928': '6379f8a4f73b000156033a2c', # tommie
+        '1053377038490292264':'624ee34ad745880bd6047956' # Shush
+    }
+    return data.get(str(discord_id), None)
 
-async def create_op_card(operation:str, ringleader:str, length:str, purpstat:str, spontaneus:bool, co_host:str=None, supervisor:str=None):
+def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
     
-    listID = "631e1f3edd797f00a8b58102" 
-    tempID = "oCs1pSm1"
-
-    if co_host==None:
-        co_host = "TBD"
-    if supervisor == None:
-        carddesc=f"- **Ringleader**: {ringleader}\n- **Co-host(s)**: {co_host}\n- **Supervisor**: {supervisor}\n- **Length**: {length}\n- **Purpose**: {purpstat}."
+    due_date_datetime = datetime.utcfromtimestamp(due_date)
+    weekday = due_date_datetime.strftime("%A")
+    if weekday == "Monday":
+        listID = "6437e49e10e8a03fa3dac765"
+    elif weekday == "Tuesday":
+        listID = "6437e4a0c604da6927e42570"
+    elif weekday == "Wednesday":
+        listID = "6437e4a282479e4e3039c33c"
+    elif weekday == "Thursday":
+        listID = "6437e4a686c318850c172c2c"
+    elif weekday == "Friday":
+        listID = "6437e4a76bfd790d5bdc6738"
+    elif weekday == "Saturday":
+        listID = "6437e4aa35c94b574d3c8c47"
+    elif weekday == "Sunday":
+        listID = "64386095c6f440093121fdd1"
     else:
-        carddesc=f"- **Ringleader**: {ringleader}\n- **Co-host(s)**: {co_host}\n- **Length**: {length}\n- **Purpose**: {purpstat}."
+        listID = "6437e2b7f6426e174d655d06"
+        
+    trellolist = trello.get_list(listID)
+        
+    due_date_str = due_date_datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    newCard = trellolist.add_card(name=f"{type} Response", due=due_date_str)
+    ringleader = trello.get_member(get_trello_id(ringleader_id))
+    newCard.add_member(ringleader)
     
-    template = trello.get_card(tempID)
-    #print(template)
-    newCard = Card(f"{operation}", listID, source=template)
+    if spontaneus: 
+        label_id = "6437e2974720c87ca4fe3e98" # SPON LABEL 6437e2974720c87ca4fe3e98
+    else:
+        label_id = "6437eb47965e94c2c8cb2eb3" # SCHED LABEL
     
-    if spontaneus:
-        label_id = "631e2ef29a42d20209a3a45a"
-        spon_label = trello.get_label(label_id)
-        newCard.add_label(spon_label)
-    
+    label = trello.get_label(label_id, boardid)
+    newCard.add_label(label)
+        
     return newCard.short_url
+
+def set_card_completed(card_url:str):
+    card_id = card_url.split('/')[-1]
+    trello_card = trello.get_card(card_id)
+    trello_card.set_due_complete()
+
+def get_members():
+    return response_trello.all_members()
+
+def get_member(id):
+    member = trello.get_member(id)
+    return member.username, member.full_name
+

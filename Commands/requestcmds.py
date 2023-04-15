@@ -21,7 +21,7 @@ class PatrolrequestButtons(discord.ui.View):
     
     @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", label="Accept", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             try:
@@ -38,7 +38,7 @@ class PatrolrequestButtons(discord.ui.View):
 
     @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", label="Decline", style=discord.ButtonStyle.grey)
     async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             embed = interaction.message.embeds[0]
@@ -69,7 +69,7 @@ class OperationrequestButtons(discord.ui.View):
     
     @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", label="Accept", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             try:
@@ -87,7 +87,7 @@ class OperationrequestButtons(discord.ui.View):
 
     @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", label="Decline", style=discord.ButtonStyle.grey)
     async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             embed = interaction.message.embeds[0]
@@ -119,7 +119,7 @@ class ExcuseButtons(discord.ui.View):
     
     @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             data = db_register_get_data(self.member.id)
@@ -142,7 +142,7 @@ class ExcuseButtons(discord.ui.View):
 
     @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", style=discord.ButtonStyle.grey)
     async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             embed = interaction.message.embeds[0]
@@ -168,12 +168,12 @@ class LoAButtons(discord.ui.View):
     
     @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             try:
                 member = interaction.guild.get_member(interaction.message.interaction.user.id)
-                role = discord.utils.get(interaction.message.guild.roles, name="DSB Leave of Absence")
+                role = discord.utils.get(interaction.message.guild.roles, name="TRU Leave of Absence")
                 await member.add_roles(role)
                 embed = interaction.message.embeds[0]
                 embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotAccept:1073668738827694131>")
@@ -186,7 +186,7 @@ class LoAButtons(discord.ui.View):
 
     @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", style=discord.ButtonStyle.grey)
     async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not DSBPC_A(interaction.user):
+        if not TRULEAD(interaction.user):
             return
         else:
             try:
@@ -214,8 +214,8 @@ class LoAAck(discord.ui.View):
     
     @discord.ui.button(emoji="👍", style=discord.ButtonStyle.grey)
     async def AckButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if DSBPC_A(interaction.user):
-            role = discord.utils.get(interaction.message.guild.roles, name="DSB Leave of Absence")
+        if TRULEAD(interaction.user):
+            role = discord.utils.get(interaction.message.guild.roles, name="TRU Leave of Absence")
             await self.member.remove_roles(role)            
             loamsgg = await interaction.channel.fetch_message(self.loaID2)
             loamsg = loamsgg.embeds[0]
@@ -237,8 +237,8 @@ class LoAEnd(discord.ui.View):
     @discord.ui.button(emoji="<:EndLoA:1067972498165071993>", label="End",style=discord.ButtonStyle.grey)
     async def LoAEnd(self, interaction:discord.Interaction, button:discord.ui.Button):
         member = interaction.guild.get_member(interaction.message.interaction.user.id)
-        if DSBPC_A(interaction.user):
-            role = discord.utils.get(interaction.message.guild.roles, name="DSB Leave of Absence")
+        if TRULEAD(interaction.user):
+            role = discord.utils.get(interaction.message.guild.roles, name="TRU Leave of Absence")
             await member.remove_roles(role)
             embed = interaction.message.embeds[0]
             embed.title= embed.title.replace("<:dsbbotAccept:1073668738827694131>", "<:dsbbotDisabled2:1067970678608908288>")
@@ -247,7 +247,7 @@ class LoAEnd(discord.ui.View):
         elif interaction.user == interaction.message.interaction.user:
             #print(self.loaID1)
             await interaction.response.send_message(f"{interaction.user.mention} is ready to end their LoA!", view=LoAAck(loAID2=self.loaID1, member=member))
-            await interaction.followup.send("Please wait for a member of DSB PreComm+ to acknowledge your new request.", ephemeral=True)
+            await interaction.followup.send("Please wait for a member of TRU PreComm+ to acknowledge your new request.", ephemeral=True)
         else:
             return
 
@@ -287,8 +287,8 @@ class RequestCmds(commands.GroupCog, group_name='request'):
     @app_commands.command(name="patrol", description="Request points for your patrols using this command.")
     @app_commands.describe(log="Message link to .qb findlog message from #bot-commands", length="The length of your patrol in minutes")
     async def request_log(self, interaction:discord.Interaction, length:int, log:str):
-        if not DSBMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only DSB Private First Class or above may interact with DSB Helper."), ephemeral=True)
+        if not TRUMEMBER(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
         if not db_register_get_data(interaction.user.id):
             return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Interaction failed!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL), ephemeral=True)   
         message_link_pattern = re.compile(r"https://(?:ptb\.)?discord(?:app)?\.com/channels/(\d+)/(\d+)/(\d+)")
@@ -311,8 +311,8 @@ class RequestCmds(commands.GroupCog, group_name='request'):
     @app_commands.command(name="operation", description="Request points for your operations using this command.")
     @app_commands.describe(operation="Example: `ECHO HH`", ringleader="The host of the operation, normally that would be you.", co_hosts="If anyone co-hosted your operation they would go here.", supervisors="If anyone soupervised your operation, they would go here.", attendees="Your attendance list goes here. Make sure to seperate the mentions using a comma.")
     async def request_op(self, interaction:discord.Interaction, operation:str, ringleader:discord.Member, supervisors:str=None, co_hosts:str=None, attendees:str=None):
-        if not ITMR_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description=f"This command is limited to DSB Sergeant+."), ephemeral=True)
+        if not TRURL(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description=f"This command is limited to TRU Sergeant+."), ephemeral=True)
         if not db_register_get_data(interaction.user.id):
             return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Interaction failed!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL), ephemeral=True)   
         embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotUnderReview:953642762857771138> __Operation__ Points Request - Operation {operation}")
@@ -339,7 +339,7 @@ class RequestCmds(commands.GroupCog, group_name='request'):
                     error_msg = f"`Co-Hosts:` {co_host_member.mention} was not found in the database."
                     break
                 if co_host_points(co_host_member) == None:
-                    error_msg = f"`Co-Hosts:` {co_host_member.mention} is not DSB MR or above."
+                    error_msg = f"`Co-Hosts:` {co_host_member.mention} is not TRU MR or above."
                     break
                 if co_host_member.id in points_dict:
                     error_msg = f"`Co-Hosts:` {co_host_member.mention} was mentioned twice."
@@ -396,8 +396,8 @@ class RequestCmds(commands.GroupCog, group_name='request'):
                 if not attendee_member:
                     error_msg = f"`Attendees:` Could not find a member with ID {attendee_id}."
                     break
-                if DSBPC_A(attendee_member):
-                    error_msg = f"`Attendees:` {attendee_member.mention} is a member of DSBPC or above. You cannot put DSBPC members and above as attendee. 😉"
+                if TRULEAD(attendee_member):
+                    error_msg = f"`Attendees:` {attendee_member.mention} is a member of TRUPC or above. You cannot put TRUPC members and above as attendee. 😉"
                     break
                 if not db_register_get_data(attendee_id):
                     error_msg = f"`Attendees:` {attendee_member.mention} was not found in the database."
@@ -419,11 +419,11 @@ class RequestCmds(commands.GroupCog, group_name='request'):
                 atttxt = "Something went wrong..."
         
         if ringleader:
-            if ITMR_A(ringleader):
+            if TRURL(ringleader):
                 points_dict[ringleader.id] = ringleader_points(ringleader)
                 embed.add_field(name="", value=f"`Ringleader:` {ringleader.display_name}[{ringleader_points(ringleader)}]")
             else:
-                return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Invalid Input", description=f"{ringleader.mention} is not DSB MR or above."))
+                return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Invalid Input", description=f"{ringleader.mention} is not TRU MR or above."))
         if co_hosts:
             embed.add_field(name="", value=f"`Co-Host:` {cohtxt}" if cohost_list.__len__() == 1 else f"`Co-Hosts:` {cohtxt}",inline=False)
         if supervisors:
@@ -438,8 +438,8 @@ class RequestCmds(commands.GroupCog, group_name='request'):
         app_commands.Choice(name="Block excuse", value="ExC"),
     ])
     async def request_ex(self, interaction: discord.Interaction, type:app_commands.Choice[str]):
-        if not DSBMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only DSB Private First Class or above may interact with DSB Helper."), ephemeral=True)
+        if not TRUMEMBER(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
         if not db_register_get_data(interaction.user.id):
             return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Interaction failed!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL), ephemeral=True)  
         #if type.value == "LoA":    

@@ -19,21 +19,19 @@ class ManagementCmds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         
-    ## DSB MANAGEMENT ##
-    @app_commands.command(name="rank", description="Used to promote/demoted TRU members. [DSBPC+]")
+    ## TRU MANAGEMENT ##
+    @app_commands.command(name="rank", description="Used to promote/demoted TRU members.")
     @app_commands.choices(rank=[
-    app_commands.Choice(name="Private First Class", value="PFC"),
-    app_commands.Choice(name="Corporal", value="Crp"),
-    app_commands.Choice(name="Sergeant", value="Sgt"),
-    app_commands.Choice(name="Supervised Staff Sergeant", value="SvSSgt"),
-    app_commands.Choice(name="Staff Sergeant", value="SSgt"),
-    app_commands.Choice(name="Sergeant Major", value="SMaj"),
-    app_commands.Choice(name="Chief Sergeant", value="CSgt"),])
+    app_commands.Choice(name="Elite Vanguard", value="EVGD"),
+    app_commands.Choice(name="Vanguard", value="VGD"),
+    app_commands.Choice(name="Elite Operator", value="EOPR"),
+    app_commands.Choice(name="Operator", value="OPR"),
+    app_commands.Choice(name="Entrant", value="ENT"),])
     async def rank_cmd(self, interaction:discord.Interaction, user:discord.Member, rank:app_commands.Choice[str]):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of DSBPC or above to use this command.", color=ErrorCOL), ephemeral=True)
-        elif not DSBROLE(user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Denied!", description="You can only rank DSB members.", color=ErrorCOL), ephemeral=True)
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL), ephemeral=True)
+        elif not TRUROLE(user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Denied!", description="You can only rank TRU members.", color=ErrorCOL), ephemeral=True)
         else:
             userrank = getrank(user)
             if rank.value=="SSgt" and userrank[1] <=18:
@@ -52,7 +50,7 @@ class ManagementCmds(commands.Cog):
             newrank = changerank(rank.value)
                         
             if userrank[1] >= 252 or userrank==None:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Unable!", description="I cannot rank members of DSB Pre-Command and above.", color=ErrorCOL), ephemeral=True)
+                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Unable!", description="I cannot rank members of TRU Pre-Command and above.", color=ErrorCOL), ephemeral=True)
             else:
                 if userrank[1] == newrank[1]:
                     return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Already at that rank!", description=f"**{user.mention}** is already a **{userrank[0]}**.", color=ErrorCOL), ephemeral=True)
@@ -76,7 +74,7 @@ class ManagementCmds(commands.Cog):
                                 await interaction.user.send(f"{user} was promoted, but not found in the database.")
                             else:
                                 if rank.value == "PFC":
-                                    await user.send(embed= discord.Embed(title="Congratulations on successfully passing your Private phase!", description=f"You are now a full-fledged operative of DSB who's ready to stand their ground in the face of danger. 🛡️\n\nNow that you're a Private First Class, be sure to register with me by running the command `/user register` in <#1058677991238008913> and follow the subsequent instructions.\n\nI will shortly add you to the <#1058758885361594378>. Here is where you will log your patrols to meet your points quota. All other information regarding logging patrols is in the pinned messages.\n\nLastly, be sure to request your 'Defensive Squadron Bravo' role in main QSO by pinging any online member of QSO Precommand in <#937473342716395543>.\n\nIf any of this information is unclear, don't hesitate to ping anyone in DSB management. <:DSB:1060271947725930496>", color=TRUCommandCOL))
+                                    await user.send(embed= discord.Embed(title="Congratulations on successfully passing your Private phase!", description=f"You are now a full-fledged operative of TRU who's ready to stand their ground in the face of danger. 🛡️\n\nNow that you're a Private First Class, be sure to register with me by running the command `/user register` in <#1058677991238008913> and follow the subsequent instructions.\n\nI will shortly add you to the <#1058758885361594378>. Here is where you will log your patrols to meet your points quota. All other information regarding logging patrols is in the pinned messages.\n\nLastly, be sure to request your 'Defensive Squadron Bravo' role in main QSO by pinging any online member of QSO Precommand in <#937473342716395543>.\n\nIf any of this information is unclear, don't hesitate to ping anyone in TRU management. <:TRU:1060271947725930496>", color=TRUCommandCOL))
                                     thread = self.bot.get_channel(1091329264764321843)
                                     ondutychannel = self.bot.get_channel(1091329185500381235)
                                     await thread.send(f"{user.mention}")
@@ -125,22 +123,22 @@ class ManagementCmds(commands.Cog):
             
     @app_commands.command(name="truwelcome", description="Used to induct new TRU members once they've joined the server.")
     async def welcome_pvt(self, interaction:discord.Interaction, member:discord.Member):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of DSBPC or above to use this command."), ephemeral=True)
-        DSBPvt = discord.utils.get(interaction.guild.roles, name="DSB Private")
-        DSBRole = discord.utils.get(interaction.guild.roles, name="DSB")
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
+        TRUPvt = discord.utils.get(interaction.guild.roles, name="TRU Private")
+        TRURole = discord.utils.get(interaction.guild.roles, name="TRU")
         ServerAccessRole = discord.utils.get(interaction.guild.roles, name="Server Access")
-        await member.edit(nick=change_nickname("DSB Private", member.display_name))
-        dsbondutychannel = await self.bot.fetch_channel(1091329185500381235) # Channel ID
-        await member.add_roles(DSBPvt, DSBRole, ServerAccessRole)
-        await dsbondutychannel.send(f"DSB, please welcome {member.mention}!")
-        await member.send(embed=discord.Embed(color=TRUCommandCOL, title=f"Welcome to Defensive Squadron Bravo {member.name}!", description=f"Alrighty...you should now have your roles...\n\nHello and welcome to QSO's Defensive Squadron Bravo. I am DSB Helper and as my name already suggests, I help manage this squadron.\n\nFirst things first, please update to your nickname to include `DSB Pvt` as your rank tag and your Roblox username. Additionally please add the `| DSB` suffix to your name in main QSO, you'll receive the DSB role once you pass your private phase. The DSB Private phase, in short, is our version of the OiT phase from main QSO, with a couple of amendments. You can find more information about the Private phase in <#960601856298602617> and an end date for said Private phase will be given to you as soon as possible.\n\nNext, please read through  <#954443926264217701>, <#957983615315222529>, <#957789241813917766> and all the other miscellaneous infoboards. I should also note that while in DSB, you are to never speak ill of other squadrons or display an form of squadron elitism or egotism. If found to be participating in these actions, you will be swiftly removed without warning.\n\nAnd on that note, DSB Management wishes you the best of luck on your Private phase, and we hope to see you excel as a defensive operative.\n\n<:DSB:1060271947725930496> *In the face of danger, we stand our ground!* <:DSB:1060271947725930496>"))
+        await member.edit(nick=change_nickname("TRU Private", member.display_name))
+        TRUondutychannel = await self.bot.fetch_channel(1091329185500381235) # Channel ID
+        await member.add_roles(TRUPvt, TRURole, ServerAccessRole)
+        await TRUondutychannel.send(f"TRU, please welcome {member.mention}!")
+        await member.send(embed=discord.Embed(color=TRUCommandCOL, title=f"Welcome to Defensive Squadron Bravo {member.name}!", description=f"Alrighty...you should now have your roles...\n\nHello and welcome to QSO's Defensive Squadron Bravo. I am TRU Helper and as my name already suggests, I help manage this squadron.\n\nFirst things first, please update to your nickname to include `TRU Pvt` as your rank tag and your Roblox username. Additionally please add the `| TRU` suffix to your name in main QSO, you'll receive the TRU role once you pass your private phase. The TRU Private phase, in short, is our version of the OiT phase from main QSO, with a couple of amendments. You can find more information about the Private phase in <#960601856298602617> and an end date for said Private phase will be given to you as soon as possible.\n\nNext, please read through  <#954443926264217701>, <#957983615315222529>, <#957789241813917766> and all the other miscellaneous infoboards. I should also note that while in TRU, you are to never speak ill of other squadrons or display an form of squadron elitism or egotism. If found to be participating in these actions, you will be swiftly removed without warning.\n\nAnd on that note, TRU Management wishes you the best of luck on your Private phase, and we hope to see you excel as a defensive operative.\n\n<:TRU:1060271947725930496> *In the face of danger, we stand our ground!* <:TRU:1060271947725930496>"))
         await interaction.response.send_message(embed=discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Success!",description=f"{member.name} should now have their roles and should have received the welcome message :D"), ephemeral=True)
         
-    @app_commands.command(name="dsbaccept", description="Used to accept new DSB members into the roblox group.")
-    async def join_dsb(self, interaction:discord.Interaction, member:discord.Member):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of DSBPC or above to use this command."), ephemeral=True)
+    @app_commands.command(name="truaccept", description="Used to accept new TRU members into the roblox group.")
+    async def join_tru(self, interaction:discord.Interaction, member:discord.Member):
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
         try:
             username = str(member.display_name).split()[-1]
             group = await roblox.get_group(15155104)
@@ -152,58 +150,28 @@ class ManagementCmds(commands.Cog):
             print(e)
             await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Error!", description=f"An error occurred while accepting {username}: {str(e)}"), ephemeral=True)
 
-    @app_commands.command(name="dsbkick", description="Used to kick DSB members.")
-    async def kick_dsb(self, interaction:discord.Interaction, member:discord.Member, reason:str):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of DSBPC or above to use this command."), ephemeral=True)
+    @app_commands.command(name="trukick", description="Used to kick TRU members.")
+    async def kick_tru(self, interaction:discord.Interaction, member:discord.Member, reason:str):
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
         try:
             username = str(member.display_name).split()[-1] 
-            group = await roblox.get_group(15155104)
+            group = await roblox.get_group(15155104) # Currently DSB
             user = await roblox.get_user_by_username(username)
-            logsch = self.bot.get_channel(1054705433971003412) # 1008449677210943548 #audit-logs
-            kickembed = discord.Embed(title=f"<:DSB:1060271947725930496> Kicked DSB Member", description=f"{member.mention} has been kicked from DSB by {interaction.user.mention}.\n\n**Reason:** {reason}", color=DarkRedCOL)
+            logsch = self.bot.get_channel(1096146385830690866) # Currently #startup || 1008449677210943548 #audit-logs
+            kickembed = discord.Embed(title=f"<:TRU:1060271947725930496> Kicked TRU Member", description=f"{member.mention} has been kicked from TRU by {interaction.user.mention}.\n\n**Reason:** {reason}", color=DarkRedCOL)
             kickembed.set_thumbnail(url=member.avatar.url)
             kickembed.set_footer(text=f"ID: {member.id} • {datetime.datetime.now().strftime('%m/%d/%Y %H:%M %p')}")
             logmsg = await logsch.send(embed=kickembed)
-            await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Member removed", description=f"Successfully removed {member.mention} from DSB.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL))
+            await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL))
             await member.send(embed = discord.Embed(title=f"You have been kicked from Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
             await group.kick_user(user)
             await member.kick(reason=reason)
         except Exception as e:
             print(e)
             await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Error!", description=f"An error occurred while accepting {username}: {str(e)}"), ephemeral=True)
-
-    @app_commands.command(name="excuse", description="Changes the quota for a user for the current block. [DSBPC+]")
-    @app_commands.describe(member="The operative you're excusing.", days="The amount of days the operative is being excused for. Cannot be more than 14 days.")
-    async def loa_quota(self, interaction:discord.Interaction, member:discord.Member, days:int):
-        if(not DSBPC_A(interaction.user)): # check if user has permission
-            embed = discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of DSBPC or above to use this command.")
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-        if days > 14:
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Failed to set days!", description=f"You cannot excuse for more than 14 days."), ephemeral=True)
-        if DSBPC_A(member):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota found!", description=f"DSB Pre-Command and above have no quota to be excused from."), ephemeral=True)
-        data = db_register_get_data(member.id)
-        if data:
-            quota, rank = get_point_quota(member)
-            if quota == None:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota found!", description=f"No quota was found for this operative."), ephemeral=True)
-            if data[4]:
-                quota_new = int(quota - ((quota/14)*data[4]))
-            if set_days_onloa(member.id, days):
-                updata = db_register_get_data(member.id)
-                if updata[4] is not None:
-                    quota_new = int(quota - ((quota/14)*updata[4]))
-                else:
-                    quota_new = quota
-                start_date, end_date, blocknumber = get_quota()
-                return await interaction.response.send_message(f"{member.mention}", embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Default quota set for {member.display_name}!" if days == 0 else f"<:dsbbotSuccess:953641647802056756> New quota for {member.display_name}!", description=f'New quota: **{quota_new} Points** <t:{end_date}:R>\nDays excused: **{updata[4]}**' if updata[4] == None else f'New quota: **{quota_new} Points** <t:{end_date}:R>\nDays excused: **{updata[4]} days**'))
-            else:
-                return await interaction.response.send_message(embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotFailed:953641818057216050> Failed to set!", description=f"Something went wrong..."), ephemeral=True)
-        else:
-            return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> User not found!", description=f"{member.display_name} was not found in registry database.", color=ErrorCOL), ephemeral=True)
     
-    @app_commands.command(name="quota",description="Updates the quota block data. [DSBPC+]")
+    @app_commands.command(name="quota",description="Updates the quota block data. [TRUPC+]")
     @app_commands.describe(block="Enter a block number 7 through 26.")
     @app_commands.choices(action=[
         app_commands.Choice(name="view block", value="view"),
@@ -211,8 +179,8 @@ class ManagementCmds(commands.Cog):
         app_commands.Choice(name="view list", value="list"),
         ])
     async def updatequota(self, interaction:discord.Interaction, action:app_commands.Choice[str], block:int):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of DSBPC or above to use this command.", color=ErrorCOL))
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL))
         all_blockdata, rows = get_all_quota_data()
         if rows == 0:
                 return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota block data found!", description="There are no quota blocks in the database.", color=ErrorCOL))
@@ -244,12 +212,12 @@ class ManagementCmds(commands.Cog):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
             
 
-    @app_commands.command(name="dsbstrike", description="Used to give out strikes in DSB.")
-    async def dsb_strike(self, interaction:discord.Interaction, member:discord.Member, reason:str):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of DSBPC or above to use this command."), ephemeral=True)
+    @app_commands.command(name="trustrike", description="Used to give out strikes in TRU.")
+    async def tru_stike(self, interaction:discord.Interaction, member:discord.Member, reason:str):
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
         else:
-            strikeemb = discord.Embed(title=f"<:DSB:1060271947725930496> Striked DSB Member", description=f"{member.mention} has recieved a strike in DSB from {interaction.user.mention}.\n\n**Reason:** {reason}", color=DarkRedCOL)
+            strikeemb = discord.Embed(title=f"<:TRU:1060271947725930496> Striked TRU Member", description=f"{member.mention} has recieved a strike in TRU from {interaction.user.mention}.\n\n**Reason:** {reason}", color=DarkRedCOL)
             #strikeemb.set_thumbnail(url=member.avatar.url)
             strikeemb.set_footer(text=f"ID: {member.id} • {datetime.datetime.now().strftime('%m/%d/%Y %H:%M %p')}")
             logsch = self.bot.get_channel(1054705433971003412) # 1008449677210943548 #audit-logs
@@ -258,12 +226,12 @@ class ManagementCmds(commands.Cog):
             await member.send(embed = discord.Embed(title=f"You have received a strike in Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
             pass
     
-    @app_commands.command(name="dsbstrikes", description="Used to view strikes in DSB.")
-    async def dsb_strikes(self, interaction:discord.Interaction, member:discord.Member=None):
+    @app_commands.command(name="trustrikes", description="Used to view strikes in TRU.")
+    async def tru_strikes(self, interaction:discord.Interaction, member:discord.Member=None):
         if member == None:
             member = interaction.user
-        if member != interaction.user and DSBPC_A(interaction.user) == False:
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of DSBPC or above to view someone else's strikes."), ephemeral=True)
+        if member != interaction.user and TRULEAD(interaction.user) == False:
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to view someone else's strikes."), ephemeral=True)
         else:
             # Get the user's warnings from the database
             warnings = None #await self.db.get_warnings(member.id)

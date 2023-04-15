@@ -3,7 +3,7 @@ import time
 import os
 from datetime import datetime
 from Database_Functions.UserdbFunction import (userget_conn)
-from Database_Functions.OperationdbFunctions import (opget_conn)
+from Database_Functions.ResponsedbFunctions import (opget_conn)
 from Database_Functions.RankdbFunctions import (rankget_conn)
 
 def get_conn():
@@ -15,7 +15,7 @@ def get_conn():
 def replace_value(database, table, column, old_value, new_value):
     if str(database) == "main": # Connect to main_database.db
         conn, cur = get_conn()
-    elif str(database) == "operations": # Connect to operations_database.db
+    elif str(database) == "responses": # Connect to operations_database.db
         conn, cur = opget_conn()
     elif str(database) == "ranks": # Connect to rank_database.db
         conn, cur = rankget_conn()
@@ -27,7 +27,7 @@ def replace_value(database, table, column, old_value, new_value):
 def clear_table(database, table):
     if str(database) == "main":
         conn, cur = get_conn()
-    elif str(database) == "operations":
+    elif str(database) == "responses":
         conn, cur = opget_conn()
     elif str(database) == "ranks":
         conn, cur = rankget_conn()

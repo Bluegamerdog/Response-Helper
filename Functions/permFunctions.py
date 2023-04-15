@@ -1,60 +1,53 @@
 from Database_Functions.MaindbFunctions import *
 import discord
 
-def DSBCOMM_A(user): # function to check if user is DSBPCOMM+
+def TRULEAD(user): # TRU Captain and above
     roles = user.roles
     for role in roles:
-        if role.name in ["QSO Pre-Command", "QSO Command", "DSB Command"] or role.permissions.administrator:
+        if role.name in ["TRU Captain", "TRU Commander", "QSO P.C.", "Field Captain", "Field Commander", "Director of Defense"] or role.permissions.administrator:
             return True
     return False
 
-def DSBPC_A(user): # function to check if user is DSBPC+ 
+def TRURL(user): # Elite Vanguard and above
     roles = user.roles
     for role in roles:
-        if role.name in ["DSB Pre-Command", "QSO Pre-Command", "QSO Command", "DSB Command"] or role.permissions.administrator:
+        if role.name in ["Elite Vanguard","TRU Captain", "TRU Commander", "QSO P.C.", "Field Captain", "Field Commander", "Director of Defense"] or role.permissions.administrator:
             return True
     return False
 
-def FMR_A(user): # function to check if user is MR+
+def TRUECO(user): # Vanguard and above
     roles = user.roles
     for role in roles:
-        if role.name in ["Elite Defense Specialist", "Master Sergeant", "[DSB] Squadron Officer", "DSB Pre-Command", "QSO Pre-Command", "QSO Command", "DSB Command"] or role.permissions.administrator:
+        if role.name in ["Vanguard", "Elite Vanguard", "TRU Captain", "TRU Commander", "QSO P.C.", "Field Captain", "Field Commander", "Director of Defense"] or role.permissions.administrator:
             return True
     return False
 
-def ITMR_A(user): # MR in-training and above
+def TRUMEMBER(user): # Operator and above
     roles = user.roles
     for role in roles:
-        if role.name in ["DSB MR", "DSB Pre-Command", "QSO Pre-Command", "QSO Command", "DSB Command"] or role.permissions.administrator:
+        if role.name in ["Server Access"] or role.permissions.administrator:
             return True
     return False
 
-def DSBMEMBER(user): # PFC+
+def TRUROLE(user): # Entrant and above
     roles = user.roles
     for role in roles:
-        if role.name in ["DSB"] and role.name not in ["DSB Private"] or role.permissions.administrator:
+        if role.name in ["TRU"]:
             return True
     return False
 
-def DSBROLE(user): # PRV+
+def onLoA(user): # On Leave of Absence
     roles = user.roles
     for role in roles:
-        if role.name in ["DSB"]:
-            return True
-    return False
-
-def onLoA(user): # On LoA?
-    roles = user.roles
-    for role in roles:
-        if role.name in ["DSB Leave of Absence"]:
+        if role.name in ["TRU Excused"]:
             return True
     return False
 
 def DEVACCESS(user: discord.Member):
-    if user.guild_permissions.administrator:
+    if user.guild_permissions.administrator or str(user.id) == "776226471575683082":
         return True
     else:
-        conn, cur = get_conn()
+        conn, cur = userget_conn()
         cur.execute(f"SELECT user_ids FROM devaccess WHERE user_ids LIKE '%{user.id}%'")
         result = cur.fetchone()
         if result:

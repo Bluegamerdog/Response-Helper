@@ -5,7 +5,7 @@ from discord import app_commands
 from Database_Functions.MaindbFunctions import *
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-from Functions.randFunctions import (get_point_quota, get_quota_completion_percentage, totalquota_withoutPC, totalpoints_withoutPC, quota_prog_display)
+from Functions.randFunctions import (get_point_quota, quota_prog_display)
 from Database_Functions.UserdbFunction import (get_users_amount, add_points, remove_points, get_points, db_register_get_data, reset_points)
 from Database_Functions.MaindbFunctions import (get_quota)
 
@@ -143,9 +143,9 @@ class overviewButtons(discord.ui.View):
                 if quota is not None:
                     quota = int(quota - ((quota/14)*data[4]))
 
-        completion_percentage = get_quota_completion_percentage(self.bot)
+        completion_percentage = "Testing"#get_quota_completion_percentage(self.bot)
         qm = quota_prog_display(completion_percentage, False)
-        embed.add_field(name=f"Total quota completion:", value=f"{qm} {completion_percentage:.1f}% || {totalpoints_withoutPC(self.bot)}/{totalquota_withoutPC(self.bot)}")
+        embed.add_field(name=f"Total quota completion:", value=f"{qm} {completion_percentage:.1f}% || 3/3")
         await interaction.message.edit(embed=embed, view=overviewButtons(self.bot))
         await interaction.response.defer()
 
@@ -156,11 +156,11 @@ class PointCmds(commands.GroupCog, group_name='points'):
         self.bot = bot
     
 
-    @app_commands.command(name="add", description="Adds points to a user. [DSBPC+]")
+    @app_commands.command(name="add", description="Adds points to a user. [TRUPC+]")
     async def add(self, interaction:discord.Interaction, member:discord.Member, amount:int):
         user = interaction.user
-        if(not DSBPC_A(user)): # check if user has permission
-            embed = discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to add points to user!", description=f"You must be a member of DSBPC or above to add points.")
+        if(not TRULEAD(user)): # check if user has permission
+            embed = discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to add points to user!", description=f"You must be a member of TRUPC or above to add points.")
             await interaction.response.send_message(embed=embed)
             return
         if(type(amount)==int and int(amount) >= 1):
@@ -173,10 +173,10 @@ class PointCmds(commands.GroupCog, group_name='points'):
             embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to add points to **{member.display_name}**!", description="Invalid point number.", color=ErrorCOL)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="remove", description="Removes points from a user. [DSBPC+]")
+    @app_commands.command(name="remove", description="Removes points from a user. [TRUPC+]")
     async def remove(self, interaction:discord.Interaction, member:discord.Member, amount:int):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to remove points from user!", description=f"You must be a member of DSBPC or above to remove points."))
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to remove points from user!", description=f"You must be a member of TRUPC or above to remove points."))
         if(type(amount)==int and int(amount)>=1):
             if remove_points(member.id, amount) == True: #removes points from user
                 embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully removed {amount} point from **{member.display_name}**!" if amount == 1 else f"<:dsbbotSuccess:953641647802056756> Successfully removed {amount} points from {member.display_name}!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
@@ -189,8 +189,8 @@ class PointCmds(commands.GroupCog, group_name='points'):
             
     @app_commands.command(name="view",description="View someone else's current point count.")
     async def view(self, interaction: discord.Interaction, user:discord.Member=None):
-        if not DSBMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only DSB Private First Class or above may interact with DSB Helper."), ephemeral=True)
+        if not TRUMEMBER(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
         else:
             embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Point data found for {user.display_name}!" if user and user != interaction.user else f"<:dsbbotSuccess:953641647802056756> Point data found!")
             if user == None:
@@ -218,10 +218,10 @@ class PointCmds(commands.GroupCog, group_name='points'):
             
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="reset",description="Resets the points of all users to zero. [DSBPC+]")
+    @app_commands.command(name="reset",description="Resets the points of all users to zero. [TRUPC+]")
     async def reset(self, interaction:discord.Interaction):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to reset points!", description="You must be a member of DSBCOMM or above to purge the registry database.", color=ErrorCOL))
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to reset points!", description="You must be a member of TRUCOMM or above to purge the registry database.", color=ErrorCOL))
         else:
             await interaction.response.send_message(embed=discord.Embed(description="<:dsbbotUnderReview:1067970676041982053> Waiting for response..."))
             embed = discord.Embed(color=HRCommandsCOL, description=f"<:dsbbotUnderReview:1067970676041982053> **Are you sure you want to reset the points?**\nReact with <:dsbbotApproved:953642750039953418> to confirm.", colour=ErrorCOL)
@@ -240,7 +240,7 @@ class PointCmds(commands.GroupCog, group_name='points'):
                 await asyncio.gather(*tasks)
 
             else:
-                if DSBPC_A(user_r):
+                if TRULEAD(user_r):
                     success = await reset_points()
                     print("Points successfully reset!")
                     if success:
@@ -253,8 +253,8 @@ class PointCmds(commands.GroupCog, group_name='points'):
 
     @app_commands.command(name="overview",description="Shows leaderboard for points.")
     async def overview(self, interaction: discord.Interaction):
-        if not DSBMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only DSB Private First Class or above may interact with DSB Helper."), ephemeral=True)
+        if not TRUMEMBER(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
         else:
             gettingembed = discord.Embed(description="Getting data...")
             await interaction.response.send_message(embed=gettingembed)
@@ -297,8 +297,8 @@ class mypointsCmd(commands.Cog):
 
     @app_commands.command(name="mypoints",description="View your point count.")
     async def mypoints(self, interaction: discord.Interaction):
-        if not DSBMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only DSB Private First Class or above may interact with DSB Helper."), ephemeral=True)
+        if not TRUMEMBER(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
         else:
             points = get_points(interaction.user.id)
             if points is False:

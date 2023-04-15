@@ -1,7 +1,7 @@
 import re
 from Database_Functions.MaindbFunctions import *
 from Functions.mainVariables import *
-from Functions.permFunctions import (DSBPC_A, onLoA)
+from Functions.permFunctions import (TRULEAD, onLoA)
 from discord.ext import commands
 
 
@@ -20,8 +20,8 @@ def get_point_quota(user, data=None):
         "Chief Sergeant": (36, "**Chief Sergeant**"),
         "Colonel": (None, "**Colonel**"),
         "Lieutenant": (None, "**Lieutenant**"),
-        "DSB Captain": (None, "**DSB Captain**"),
-        "DSB Commander": (None, "**DSB Commander**"),
+        "TRU Captain": (None, "**TRU Captain**"),
+        "TRU Commander": (None, "**TRU Commander**"),
         "Major": (None, "**Major** *[QSO Pre-Command]*"),
         "QSO Pre-Command": (None, "**QSO Pre-Command**"),
         "QSO Command": (None, "**QSO Command**")
@@ -30,40 +30,11 @@ def get_point_quota(user, data=None):
     for role in user.roles:
         if role.name in role_quota:
             quota, rank = role_quota[role.name]
-            if data and data[4] and DSBPC_A(user)==False:
+            if data and data[4] and TRULEAD(user)==False:
                 quota = int(quota - ((quota/14)*data[4]))
             return quota, rank
     
-    return None, None
-
-def totalquota_withoutPC(bot:commands.Bot):
-    rows = db_get_all_data()
-    total_quota = 0
-    for row in rows:
-        member = bot.get_guild(SupportServerID).get_member(row[1])
-        if member:
-            if DSBPC_A(member) == False and onLoA(member)==False:
-                quota, rank = get_point_quota(member, row)
-                if quota:
-                    total_quota += quota
-    return total_quota
-
-def totalpoints_withoutPC(bot:commands.Bot):
-    rows = db_get_all_data()
-    total_points:int = 0
-    for row in rows:
-        member = bot.get_guild(SupportServerID).get_member(row[1])
-        if member:
-            if DSBPC_A(member)==False or onLoA(member)==False:
-                total_points += row[3]
-    return total_points    
-
-def get_quota_completion_percentage(bot:commands.Bot):
-    total_quota = totalquota_withoutPC(bot)
-    if total_quota == 0:
-        return 0
-    else:
-        return (totalpoints_withoutPC(bot) / total_quota) * 100
+    return None, None   
 
 def attendance_points(user):
     roles_ = {
@@ -88,8 +59,8 @@ def co_host_points(user):
         "Staff Sergeant": 4,
         "Sergeant Major": 6,
         "Chief Sergeant": 6,
-        "DSB Pre-Command": 1,
-        "DSB Command": 1,
+        "TRU Pre-Command": 1,
+        "TRU Command": 1,
     }
     
     for role in user.roles:
@@ -102,8 +73,8 @@ def supervisor_points(user):
     roles_ = {
         "Sergeant Major": 5,
         "Chief Sergeant": 6,
-        "DSB Pre-Command": 1,
-        "DSB Command": 1,
+        "TRU Pre-Command": 1,
+        "TRU Command": 1,
     }
     
     for role in user.roles:
@@ -118,8 +89,8 @@ def ringleader_points(user):
         "Staff Sergeant": 8,
         "Sergeant Major": 8,
         "Chief Sergeant": 7,
-        "DSB Pre-Command": 1,
-        "DSB Command": 1,
+        "TRU Pre-Command": 1,
+        "TRU Command": 1,
     }
     
     for role in user.roles:
@@ -183,7 +154,7 @@ def quota_prog_display(percent, LOA:bool):
 
 def getrank(user):
     roles_ = {
-        "DSB Private": ("DSB Private", 1),
+        "TRU Private": ("TRU Private", 1),
         "Private First Class": ("Private First Class", 4),
         "Corporal": ("Corporal", 6),
         "Sergeant": ("Sergeant", 16),
@@ -194,8 +165,8 @@ def getrank(user):
         "Major":("Major [QSO Pre-Command]", 252),
         "Colonel":("Colonel", 252),
         "Lieutenant":("Lieutenant", 252),
-        "DSB Captain": ("DSB Captain", 253),
-        "DSB Commander": ("DSB Commander", 253),
+        "TRU Captain": ("TRU Captain", 253),
+        "TRU Commander": ("TRU Commander", 253),
         }
     
     for role in user.roles:
@@ -205,7 +176,7 @@ def getrank(user):
 
 def changerank(rank):
     ranks_ = {
-        "Pvt": ("DSB Private", 1),
+        "Pvt": ("TRU Private", 1),
         "PFC": ("Private First Class", 4),
         "Crp": ("Corporal", 6),
         "Sgt": ("Sergeant", 10),
@@ -216,14 +187,14 @@ def changerank(rank):
         "Major":("Major [QSO Pre-Command]", 252),
         "Colonel":("Colonel", 252),
         "Lieutenant":("Lieutenant", 252),
-        "DSB Captain": ("DSB Captain", 253),
-        "DSB Commander": ("DSB Commander", 253),}
+        "TRU Captain": ("TRU Captain", 253),
+        "TRU Commander": ("TRU Commander", 253),}
     
     return ranks_.get(rank, None)
 
 def change_nickname(rank_name, prev_nickname):
     rank_abbreviations = {
-        "DSB Private": "Pvt",
+        "TRU Private": "Pvt",
         "Private First Class": "PFC",
         "Corporal": "Crp",
         "Sergeant": "Sgt",
@@ -231,14 +202,14 @@ def change_nickname(rank_name, prev_nickname):
         "Staff Sergeant": "SSgt",
         "Sergeant Major": "SMaj",
         "Chief Sergeant": "CSgt",
-        "Major":"DSBMAJ/",
+        "Major":"TRUMAJ/",
         "Colonel":"Col",
         "Lieutenant": "Ltn",
-        "DSB Captain": "Capt",
-        "DSB Commander": "Cmdr",
+        "TRU Captain": "Capt",
+        "TRU Commander": "Cmdr",
     }
     username = prev_nickname.split()[-1]
-    new_nick = f"DSB {rank_abbreviations.get(rank_name, 'Unknown')} {username}"
+    new_nick = f"TRU {rank_abbreviations.get(rank_name, 'Unknown')} {username}"
     return new_nick
 
 

@@ -19,9 +19,8 @@ from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import *
 from Commands.trumanagementcmds import ManagementCmds
-
 from Commands.botcmds import BotCmds, DatabaseCmds
-from Commands.operationcmds import OperationCmds, soupCmd
+from Commands.responsecmds import OperationCmds
 from Commands.othercmds import otherCmds
 from Commands.pointscmds import PointCmds, mypointsCmd
 from Commands.registrycmds import RegistryCmds
@@ -41,7 +40,6 @@ async def on_ready():
     await bot.add_cog(BotCmds(bot, start_time))
     await bot.add_cog(ManagementCmds(bot))
     await bot.add_cog(OperationCmds(bot))
-    await bot.add_cog(soupCmd(bot))
     await bot.add_cog(otherCmds(bot))
     await bot.add_cog(PointCmds(bot))
     await bot.add_cog(mypointsCmd(bot))
@@ -89,7 +87,7 @@ async def on_ready():
     if not notes:
         embed.add_field(name="Notes", value="N/A", inline=False)
     
-    channel = bot.get_channel(1069974021246046310)  # Startup-channel ID
+    channel = bot.get_channel(1096146385830690866)  # Startup-channel ID
     await channel.send(embed=embed)
 with open('token.json', 'r') as f:
     data = json.load(f)
@@ -130,38 +128,38 @@ async def edit_message(interaction:discord.Interaction, channel:discord.TextChan
 class InfoboardOptions(discord.ui.Select):
     def __init__(self):
         options=[
-            discord.SelectOption(label="DSB Helper Infoboard", description="A list of all basic commands.", value="DHI"),
+            discord.SelectOption(label="TRU Helper Infoboard", description="A list of all basic commands.", value="DHI"),
             discord.SelectOption(label="Basic Commands", description="A list of all basic commands.", value="BC"),
-            discord.SelectOption(label="DSB Commands", description="A list of all commands available to DSB members.", value="DC"),
-            discord.SelectOption(label="Management Commands", description="A list of all commands available to DSBPC+.", value="MC"),
+            discord.SelectOption(label="TRU Commands", description="A list of all commands available to TRU members.", value="DC"),
+            discord.SelectOption(label="Management Commands", description="A list of all commands available to TRUPC+.", value="MC"),
             #discord.SelectOption(label="Squadrons Infoboard", description="Shows some general information about the server and squadrons.", value="SI")
         ]
         super().__init__(placeholder="Select a dropdown...", options=options, min_values=1, max_values=1)
         
     async def callback(self, interaction: discord.Interaction):
         if self.values[0] == "DHI":
-            embed = discord.Embed(title="**<:DSB:1060271947725930496> DSB Helper Infoboard**", description="The DSB Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
+            embed = discord.Embed(title="**<:TRU:1060271947725930496> TRU Helper Infoboard**", description="The TRU Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
             embed.add_field(name="Credits", value="- Main developer: Blue\n- Bot host: Orange\n- Frontend Design: Blue, Shush & Polish\n- Bot testing: the suffering + Polish")
-            embed.set_footer(text="DSB Helper v.idk")
+            embed.set_footer(text="TRU Helper v.idk")
             embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/lnHKwZ40MRhYKuNJpNUS8NQiaekqkgfW9TaGj-B5Yg0/https/tr.rbxcdn.com/580b2e0cd698decfa585464b50a4278c/150/150/Image/Png")
         elif self.values[0] == "BC":
             embed = discord.Embed(title="**Basic Commands**", description="All servers members can use these commands. They are represented by the color white.", color=BasiccommandCOL)
             embed.add_field(name="**/whois**", value="Displays someones general and server informations.", inline=False)
             embed.add_field(name="**/ping**", value="Shows the bot's response time in miliseconds.", inline=False)
         elif self.values[0] == "DC":
-            embed = discord.Embed(title="**<:DSB:1060271947725930496> DSB Commands**", description="All DSB members PFC and above have access to these and are represented by the navy blue.", color=TRUCommandCOL)
+            embed = discord.Embed(title="**<:TRU:1060271947725930496> TRU Commands**", description="All TRU members PFC and above have access to these and are represented by the navy blue.", color=TRUCommandCOL)
             embed.add_field(name="**/points overview**", value="Displays a leaderboard for points.", inline=False)
             embed.add_field(name="**/points view**", value="View someone else's current point count.", inline=False)
             embed.add_field(name="**/mypoints**", value="View your current point count.", inline=False)
             embed.add_field(name="**/soup**", value="Adds or removes the Op. Supervisor Role. [EDS+]", inline=False)
             #embed.add_field(name="**/rloa**", value="Coming soon:tm:...", inline=False)
         elif self.values[0] == "MC":
-            embed = discord.Embed(title="**Management Commands**", description="DSB Pre-Command and above have access to these. They are represented by the color black.", color=HRCommandsCOL)
+            embed = discord.Embed(title="**Management Commands**", description="TRU Pre-Command and above have access to these. They are represented by the color black.", color=HRCommandsCOL)
             embed.add_field(name="**/points add/remove**", value="Adds/removes points to/from a user.", inline=False)
             embed.add_field(name="**/points reset**", value="Resets the points of all users to zero.", inline=False)
             embed.add_field(name="**/updatequota**", value="Updates the quota block number, start and end date.", inline=False)
-            embed.add_field(name="**/restart**", value="Restarts DSB Helper.", inline=False)
-            embed.add_field(name="**/shutdown**", value="Shuts down DSB Helper. [DSBCOMM+]", inline=False)
+            embed.add_field(name="**/restart**", value="Restarts TRU Helper.", inline=False)
+            embed.add_field(name="**/shutdown**", value="Shuts down TRU Helper. [TRUCOMM+]", inline=False)
         #elif self.values[0] == "SI":
         #    embed = discord.Embed(title="**Server Info**")
         
@@ -174,9 +172,9 @@ class InfoboardView(discord.ui.View):
 
 @bot.tree.command(name="infoboard",description="Shows bot information and a list of commands.")
 async def infoboard(interaction: discord.Interaction):
-    embed = discord.Embed(title="**DSB Helper Infoboard**", description="The DSB Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
+    embed = discord.Embed(title="**TRU Helper Infoboard**", description="The TRU Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
     embed.add_field(name="Credits", value="- Main developer: Blue\n- Bot host: Orange\n- Frontend Design: Blue, Shush & Polish\n- Bot testing: the suffering + Polish")
-    embed.set_footer(text="DSB Helper v.idk")
+    embed.set_footer(text="TRU Helper v.idk")
     embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/lnHKwZ40MRhYKuNJpNUS8NQiaekqkgfW9TaGj-B5Yg0/https/tr.rbxcdn.com/580b2e0cd698decfa585464b50a4278c/150/150/Image/Png")
     await interaction.response.send_message(embed=embed, view=InfoboardView())
 

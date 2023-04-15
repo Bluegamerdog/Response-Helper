@@ -7,7 +7,6 @@ import asyncio
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Database_Functions.MaindbFunctions import (replace_value, clear_table)
-from Database_Functions.OperationdbFunctions import (pal_blacklist_add, pal_blacklist_remove, get_blacklisted_pals)
 from Database_Functions.UserdbFunction import (add_devaccess_member, remove_devaccess_member, get_devaccess_members)
 from discord.ext import commands
 from discord import app_commands
@@ -20,10 +19,10 @@ class BotCmds(commands.Cog):
 
     ## DEV COMMANDS ##
     #MAYBE EDIT MESSAGE AFTER RELOAD
-    @app_commands.command(name="reload",description="Restarts the DSB Helper. [DSBPC+]")
+    @app_commands.command(name="reload",description="Restarts the TRU Helper. [TRUPC+]")
     async def restart(self, interaction:discord.Interaction, commands:str=None):
-        if not DSBPC_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of DSBPC or above to use the restart command.", color=ErrorCOL))
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use the restart command.", color=ErrorCOL))
         if commands != None:
             await interaction.response.send_message(embed=discord.Embed(color=YellowCOL, title="<:dsbbotCaution:1067970676041982053> Syncing Commands..."))
             try:
@@ -38,17 +37,17 @@ class BotCmds(commands.Cog):
             print(f"=========\nBot restarted by {interaction.user}\n=========")
             os.execv(sys.executable, ['python'] + sys.argv)
     #COMPLETE        
-    @app_commands.command(name="shutdown", description="Shuts down DSB Helper. [DSBCOMM+]")
+    @app_commands.command(name="shutdown", description="Shuts down TRU Helper. [DEVACCESS]")
     async def shutdown(self, interaction:discord.Interaction):
-        if not DSBCOMM_A(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be member of DSBCOMM or above to use the shutdown command.", color=ErrorCOL))
+        if not DEVACCESS(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be member of TRUCOMM or above to use the shutdown command.", color=ErrorCOL))
         else:
             embed = discord.Embed(color=ErrorCOL, title="<:dsbbotCaution:1067970676041982053> Shutting down...")
             await interaction.response.send_message(embed=embed)
             print(f"=========\nBot closed by {interaction.user}\n=========")
             return await self.bot.close()
     #COMPLETE
-    @app_commands.command(name="activity", description="Sets DSB Helper's activity. [DEVACCESS]")
+    @app_commands.command(name="activity", description="Sets TRU Helper's activity. [DEVACCESS]")
     @app_commands.choices(type=[
         app_commands.Choice(name="clear activity", value="clear"),
         app_commands.Choice(name="Watch command", value="w_enable"),
@@ -82,7 +81,7 @@ class BotCmds(commands.Cog):
                 return await interaction.response.send_message(f"The </watching:1070173169937289276> command is now disabled.", ephemeral=True)
         elif type.value == "clear":
             await self.bot.change_presence(activity=None)
-            return await interaction.response.send_message("DSB Helper's activity has been cleared.", ephemeral=True)
+            return await interaction.response.send_message("TRU Helper's activity has been cleared.", ephemeral=True)
         elif type.value == "lmfao_event":
             global lmfao_event
             if lmfao_event == True:
@@ -99,17 +98,18 @@ class BotCmds(commands.Cog):
         current_time = datetime.now()
         uptime = current_time - self.start_time
         unix_time = int(time.mktime(self.start_time.timetuple()))
-        await interation.response.send_message(embed=discord.Embed(color=TRUCommandCOL,title="DSB Helper Uptime", description=f"➥ DSB Helper started <t:{unix_time}:R> (<t:{unix_time}>)"))
+        await interation.response.send_message(embed=discord.Embed(color=TRUCommandCOL,title="TRU Helper Uptime", description=f"➥ TRU Helper started <t:{unix_time}:R> (<t:{unix_time}>)"))
         
 #COMPLETE FOR NOW     
 class DatabaseCmds(commands.GroupCog, group_name='db'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+
     @app_commands.command(name="edit", description="Able to change any value of the database. [DEVACCESS]")
     @app_commands.choices(database=[
         app_commands.Choice(name="Main Database", value="main"),
-        app_commands.Choice(name="Operations Database", value="operations"),
+        app_commands.Choice(name="Response Database", value="responses"),
         app_commands.Choice(name="Rank Database", value="ranks"),
         app_commands.Choice(name="User Database", value="users")])
     @app_commands.choices(action=[
@@ -139,51 +139,21 @@ class DatabaseCmds(commands.GroupCog, group_name='db'):
                             clear_table(database.value, table)
                             print(f"Cleared {table} by {interaction.user}!")
                             embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Point reset successful!", color=discord.Color.green())
-                            await interaction.edit_original_response(embed = discord.Embed(title=f"<:dsbbotCaution:1067970676041982053> Database table `{table}` successfully cleared!", color=DarkGreenCOL()))
+                            return await interaction.edit_original_response(embed = discord.Embed(title=f"<:dsbbotCaution:1067970676041982053> Database table `{table}` successfully cleared!", color=DarkGreenCOL))
                 except Exception as e:
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL), ephemeral=True)  
+                    return await interaction.edit_original_response(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL))  
             else:
                 try:
                     replace_value(database.value, table, column, old, new)
                     return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotSuccess:953641647802056756> Successfully updated!", description=f"**Table:** `{table}` || **Column:** `{column}`\n\nChanged: `{old}` -> `{new}`", color=SuccessCOL))
                 except Exception as e:
                     return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL), ephemeral=True)
-            
-    @app_commands.command(name="pals_blacklist", description="Used to add or remove blacklisted PAL combinations. [DEVACCESS]")
-    async def add_blacklist(self, interaction:discord.Interaction, add:str=None, remove:str=None, list_all:str=None):
-        if not DEVACCESS(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be listed under DEVACCESS to use this command.", color=ErrorCOL))
-        else:
-            if list_all:
-                pals_list = get_blacklisted_pals()
-                if not pals_list:
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotCaution:1067970676041982053> Blacklist is empty!", color=YellowCOL), ephemeral=True)
-                pals_str = "\n".join([f"> `{p[0]}`" for i, p in enumerate(pals_list)])
-                embed = discord.Embed(title="Blacklisted PAL Combinations", description=pals_str, color=TRUCommandCOL)
-                return await interaction.response.send_message(embed=embed, ephemeral=True)
-            if add:
-                pals = add.split()
-                if len(pals) > 10:
-                    return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Incorrect Input!", description="You can only input up to 10 pals at a time and each pal cannot be over three characters long.", color=ErrorCOL))
-                success, existing_pals = pal_blacklist_add(pals)
-                if success:
-                    return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> PAL combination(s) `{', '.join(pals)}` have been blacklisted!", color=SuccessCOL))
-                else:
-                    return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> PAL combination(s) `{', '.join(existing_pals)}` are already blacklisted!", color=ErrorCOL), ephemeral=True)
 
-            if remove:
-                pals = remove.split()
-                if len(pals) > 10:
-                    return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Incorrect Input!", description="You can only input up to 10 pals at a time and each pal cannot be over three characters long.", color=ErrorCOL))
-                success, unexisting_pals = pal_blacklist_remove(pals)
-                if success:
-                    await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> PAL combination(s) `{', '.join(pals)}` have been removed from blacklist!", color=SuccessCOL))
-                else:
-                    return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> PAL combination(s) `{', '.join(unexisting_pals)}` not found in blacklist!", color=ErrorCOL), ephemeral=True)
+
  
     @app_commands.command(name="dev_access", description="Add/remove users to/from DEVACCESS. [DEVACCESS]")
     async def dev_access_edit(self, interaction:discord.Interaction, add:discord.Member=None, remove:discord.Member=None, list_all:str=None):
-        if not DEVACCESS(interaction.user):
+        if interaction.user.id != 776226471575683082 or not DEVACCESS(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be listed under DEVACCESS to use this command.", color=ErrorCOL))
 
         if list_all:
