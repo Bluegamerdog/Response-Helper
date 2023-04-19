@@ -19,24 +19,23 @@ def get_trello_id(discord_id):
     }
     return data.get(str(discord_id), None)
 
+trello_day_dict = {
+    "Monday": "6437e49e10e8a03fa3dac765",
+    "Tuesday": "6437e4a0c604da6927e42570",
+    "Wednesday": "6437e4a282479e4e3039c33c",
+    "Thursday": "6437e4a686c318850c172c2c",
+    "Friday": "6437e4a76bfd790d5bdc6738",
+    "Saturday": "6437e4aa35c94b574d3c8c47",
+    "Sunday": "64386095c6f440093121fdd1",
+
+}
+
 def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
     
     due_date_datetime = datetime.utcfromtimestamp(due_date)
     weekday = due_date_datetime.strftime("%A")
-    if weekday == "Monday":
-        listID = "6437e49e10e8a03fa3dac765"
-    elif weekday == "Tuesday":
-        listID = "6437e4a0c604da6927e42570"
-    elif weekday == "Wednesday":
-        listID = "6437e4a282479e4e3039c33c"
-    elif weekday == "Thursday":
-        listID = "6437e4a686c318850c172c2c"
-    elif weekday == "Friday":
-        listID = "6437e4a76bfd790d5bdc6738"
-    elif weekday == "Saturday":
-        listID = "6437e4aa35c94b574d3c8c47"
-    elif weekday == "Sunday":
-        listID = "64386095c6f440093121fdd1"
+    if weekday in trello_day_dict:
+        listID = trello_day_dict[weekday]
     else:
         listID = "6437e2b7f6426e174d655d06"
         
