@@ -38,7 +38,7 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
             embed = discord.Embed(
                 title=embedTitle,
                 description=embedDesc,
-                color=SuccessCOL
+                color=YellowCOL
             )
             #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
             #embed.set_footer(response.json()["name"])

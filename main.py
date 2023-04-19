@@ -48,6 +48,7 @@ async def on_ready():
     await bot.add_cog(RequestCmds(bot))
     await bot.add_cog(testingCmds(bot))
     await bot.add_cog(SealDBCommands(bot))
+    #await bot.add_cog(SealLoggingCommands(bot))
     
     
     # Console output

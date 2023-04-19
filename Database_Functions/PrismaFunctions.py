@@ -23,10 +23,11 @@ async def registerUser(discordID: int, profileLink: str, name: str):
         await db.connect()
 
         User = await db.operative.create({
-            'discordID': discordID,
+            'discordID': str(discordID),
             'profileLink': profileLink,
             'userName': name,
-            'rank': "Placeholder"
+            'rank': "Placeholder",
+            'activeLog': False
         })
 
         await db.disconnect()
@@ -34,6 +35,53 @@ async def registerUser(discordID: int, profileLink: str, name: str):
     except Exception as e:
         return e
 
+
+"""
+await prisma.logs.create({
+                data: {
+                    logID: id.toString(),
+                    timeStarted: logStart.toString(),
+                    timeEnded: "NULL",
+                    timeElapsed: "NULL",
+                    operativeName: splitUser(nickname)
+                }
+            })
+await prisma.operative.update({
+    where: {
+        discordID: interaction.user.id
+    },
+    data: {
+        logs: {
+            connect: {
+                logID: id.toString()
+            }
+        },
+        activeLog: true
+    }
+})
+"""
+
+async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
+    try:
+        db = Prisma()
+        await db.connect()
+        log = await db.logs.create({
+            'timeStarted': unixTime,
+            'timeEnded': "Null",
+            'timeElapsed': "Null",
+        })
+        await db.operative.update(where={
+            'discordID': str(interaction.user.id)
+        }, data={
+            logs: {
+                connect: {
+                    logID: str(log.logID)
+                }
+            }
+        })
+
+    except Exception as e:
+        return e
 
 async def removeUser(discordID: int, interaction: discord.Interaction):
     try:

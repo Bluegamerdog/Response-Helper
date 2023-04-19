@@ -15,6 +15,8 @@ from Database_Functions.PrismaFunctions import *
 from Functions.permFunctions import *
 from Functions.randFunctions import *
 from Functions.formattingFunctions import *
+import datetime
+import time
 
 
 ### UPDATE FOR DATABASES ###
@@ -22,20 +24,31 @@ from Functions.formattingFunctions import *
 
 # Gave up and decided to rewrite it myself, command uses profile link and then discovers the rest on it's own
 
-class SealDBCommands(commands.GroupCog, group_name='trulogging'):
+
+
+# Need group role IDs to complete setup here, as of now it works manually
+class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
 
     @app_commands.command(name="startlog", description="Start a log.")
-    async def startlog(self, ctx: discord.Interaction, role: discord.Role):
-        pass
+    async def startlog(self, interaction: discord.Interaction):
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+
+            date_time = datetime.datetime.now()
+            unixTime = int(time.mktime(date_time.timetuple()))
+
+            successEmbed = embedBuilder("Warning", embedTitle="The current time is: ", embedDesc=("I hate python (this is zulu time): <t:" + str(unixTime) + ":f>"))
+            print(successEmbed)
+            await interaction.response.send_message(embed=successEmbed)
 
 
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
 
-#Need group role IDs to complete setup here, as of now it works manually
-class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
-    def __init__(self, bot: commands.bot):
-        self.bot = bot
 
     @app_commands.command(name="rolebind", description="Bind a role using ")
     # @app_commands.describe(roles="Roles to bind")
