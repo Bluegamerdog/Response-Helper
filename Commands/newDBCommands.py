@@ -1,7 +1,7 @@
 import discord
 import asyncio
 
-import Database_Functions.PrismaFunctions
+import Database_Functions.PrismaFunctions as dbFuncs
 from Functions import permFunctions
 # Embed types: Success, Warning, Error
 from Functions.formattingFunctions import embedBuilder
@@ -21,6 +21,18 @@ from Functions.formattingFunctions import *
 
 
 # Gave up and decided to rewrite it myself, command uses profile link and then discovers the rest on it's own
+
+class SealDBCommands(commands.GroupCog, group_name='trulogging'):
+    def __init__(self, bot: commands.bot):
+        self.bot = bot
+
+    @app_commands.command(name="startlog", description="Start a log.")
+    async def startlog(self, ctx: discord.Interaction, role: discord.Role):
+        pass
+
+
+
+#Need group role IDs to complete setup here, as of now it works manually
 class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
@@ -30,11 +42,32 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def rolebind(self, interaction: discord.Interaction, role: discord.Role,
                        robloxid: int):
         try:
+            serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+            print(serverConfig)
+            requiredRole = interaction.guild.get_role(int(serverConfig.commandRole))
+            if permFunctions.checkPermission(interaction.user.top_role, requiredRole):
+                try:
+                    dbresponse = await dbFuncs.createBinding(role, robloxid, interaction)
+                    if dbresponse == True:
+                        successEmbed = embedBuilder("Success", embedTitle="A role binding was created for the "
+                                                                          "following: ",
+                                                    embedDesc="Discord role: <@&" + str(role.id) + "> and Roblox role "
+                                                                                                   "id of: " + str(
+                                                        robloxid))
+                        await interaction.response.send_message(embed=successEmbed)
+                    else:
+                        errEmbed = embedBuilder("Error", embedTitle="An error occured:",
+                                                embedDesc="Error: " + str(dbresponse))
+                        await interaction.response.send_message(embed=errEmbed)
+                except Exception as e:
+                    errEmbed = embedBuilder("Error", embedTitle="An error occured:",
+                                            embedDesc="Error: " + str(e))
+                    await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+            else:
+                errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                        embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+                await interaction.response.send_message(embed=errEmbed, ephemeral=True)
 
-            permFunctions.checkPermission(interaction.user.top_role, )
-            await interaction.response.send_message("Sanity check, is the role I passed below me: " +
-                                                    str(permFunctions.checkPermission(interaction.user.top_role), role,
-                                                                                  ), ephemeral=True)
         except Exception as e:
             errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
             await interaction.response.send_message(embed=errEmbed, ephemeral=True)
@@ -50,9 +83,9 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
         await db.connect()
         await db.server.upsert(where={
             'serverID': str(interaction.guild.id)
-            },
+        },
             data={
-                'create':{
+                'create': {
                     'serverID': str(interaction.guild.id),
                     'announceRole': str(ping_role.id),
                     'announceChannel': str(announce_channel.id),
@@ -69,10 +102,11 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
                     'developerRole': str(developer_role.id)
                 }
 
-        })
+            })
         await db.disconnect()
 
-        embed = embedBuilder(embedType="Success", embedTitle="Success!", embedDesc="A configuration with the following details was made: ")
+        embed = embedBuilder(embedType="Success", embedTitle="Success!",
+                             embedDesc="A configuration with the following details was made: ")
         embed.add_field(name="Role to ping for announcements: ", value="<@&" + str(ping_role.id) + ">")
         embed.add_field(name="Role permission for logging: ", value="<@&" + str(logrole.id) + ">")
         embed.add_field(name="Role permission for scheduling: ", value="<@&" + str(schedule_role.id) + ">")
@@ -80,7 +114,6 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
         embed.add_field(name="TRU Command role: ", value="<@&" + str(command_role.id) + ">")
         embed.add_field(name="Developer role: ", value="<@&" + str(developer_role.id) + ">")
         await interaction.response.send_message(embed=embed, ephemeral=False)
-
 
     """
     @app_commands.command(name="sanity", description="Register yourself with the TRU bot!")
