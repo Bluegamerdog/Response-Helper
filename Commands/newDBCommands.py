@@ -33,7 +33,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
 
             permFunctions.checkPermission(interaction.user.top_role, )
             await interaction.response.send_message("Sanity check, is the role I passed below me: " +
-                                                    permFunctions.checkPermission(interaction.user.top_role, role,
+                                                    str(permFunctions.checkPermission(interaction.user.top_role), role,
                                                                                   ), ephemeral=True)
         except Exception as e:
             errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")

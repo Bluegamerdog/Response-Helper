@@ -5,7 +5,7 @@ import discord
 def checkPermission(userRole: discord.role, targetRole: discord.role):
     print("User role: " + str(userRole.position))
     print("Target role: " + str(targetRole.position))
-    return str(userRole.position >= targetRole.position)
+    return userRole.position >= targetRole.position
 
 
 # Consolidate into a single function rather than do this every time :steamangry:
