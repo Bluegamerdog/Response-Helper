@@ -1,32 +1,93 @@
 import discord
 import asyncio
-#Embed types: Success, Warning, Error
+
+import Database_Functions.PrismaFunctions
+from Functions import permFunctions
+# Embed types: Success, Warning, Error
 from Functions.formattingFunctions import embedBuilder
 from discord.ext import commands
 from discord import app_commands
 from Database_Functions.MaindbFunctions import *
+import Database_Functions.PrismaFunctions as DBFunc
 from Database_Functions.UserdbFunction import *
 from Functions.mainVariables import *
+from Database_Functions.PrismaFunctions import *
 from Functions.permFunctions import *
 from Functions.randFunctions import *
 from Functions.formattingFunctions import *
 
+
 ### UPDATE FOR DATABASES ###
 
 
-
-def CheckPermissions(userRole: discord.role, targetRole: discord.role):
-    pass
-
-#Gave up and decided to rewrite it myself, command uses profile link and then discovers the rest on it's own
-class SealDBCommands(commands.GroupCog, group_name='TRURegistry'):
+# Gave up and decided to rewrite it myself, command uses profile link and then discovers the rest on it's own
+class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
-    @app_commands.command(name="register", description="Register yourself with the TRU bot!")
-    
-    async def register(self, interaction: discord.Interaction, profileLink: str):
-        pass
 
+    @app_commands.command(name="rolebind", description="Bind a role using ")
+    # @app_commands.describe(roles="Roles to bind")
+    async def rolebind(self, interaction: discord.Interaction, role: discord.Role,
+                       robloxid: int):
+        try:
+
+            permFunctions.checkPermission(interaction.user.top_role, )
+            await interaction.response.send_message("Sanity check, is the role I passed below me: " +
+                                                    permFunctions.checkPermission(interaction.user.top_role, role,
+                                                                                  ), ephemeral=True)
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+    rolebind._params["role"].required = True
+    rolebind._params["robloxid"].required = True
+
+    @app_commands.command(name="serverconfig", description="Configure bot permission settings")
+    async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
+                           announce_channel: discord.TextChannel, command_role: discord.Role,
+                           developer_role: discord.Role, ping_role: discord.Role):
+        db = Prisma()
+        await db.connect()
+        await db.server.upsert(where={
+            'serverID': str(interaction.guild.id)
+            },
+            data={
+                'create':{
+                    'serverID': str(interaction.guild.id),
+                    'announceRole': str(ping_role.id),
+                    'announceChannel': str(announce_channel.id),
+                    'logPermissionRole': str(logrole.id),
+                    'announcePermissionRole': str(schedule_role.id),
+                    'commandRole': str(command_role.id),
+                    'developerRole': str(developer_role.id)
+                }, 'update': {
+                    'announceRole': str(ping_role.id),
+                    'announceChannel': str(announce_channel.id),
+                    'logPermissionRole': str(logrole.id),
+                    'announcePermissionRole': str(schedule_role.id),
+                    'commandRole': str(command_role.id),
+                    'developerRole': str(developer_role.id)
+                }
+
+        })
+        await db.disconnect()
+
+        embed = embedBuilder(embedType="Success", embedTitle="Success!", embedDesc="A configuration with the following details was made: ")
+        embed.add_field(name="Role to ping for announcements: ", value="<@&" + str(ping_role.id) + ">")
+        embed.add_field(name="Role permission for logging: ", value="<@&" + str(logrole.id) + ">")
+        embed.add_field(name="Role permission for scheduling: ", value="<@&" + str(schedule_role.id) + ">")
+        embed.add_field(name="Announcements channel: ", value="<#" + str(announce_channel.id) + ">")
+        embed.add_field(name="TRU Command role: ", value="<@&" + str(command_role.id) + ">")
+        embed.add_field(name="Developer role: ", value="<@&" + str(developer_role.id) + ">")
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+
+
+    """
+    @app_commands.command(name="sanity", description="Register yourself with the TRU bot!")
+    async def sanity(self, interaction: discord.Interaction, profileLink: str):
+        interaction.response.send_message("Sanity check: ",
+                                          permFunctions.checkPermission(interaction.user.top_role, DBFunc.findRole()))
+    """
 
 
 class RegistryCmds(commands.GroupCog, group_name='devreg'):

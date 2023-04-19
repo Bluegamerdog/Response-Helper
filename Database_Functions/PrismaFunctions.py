@@ -48,7 +48,7 @@ async def removeUser(discordID: int, interaction: discord.Interaction):
     except Exception as e:
         return e
     
-async def createBinding(discordRole: discord.Role, robloxID: int,interaction: discord.Interaction):
+async def createBinding(discordRole: discord.role, robloxID: int,interaction: discord.Interaction):
     db = Prisma()
     await db.connect()
 
@@ -64,6 +64,27 @@ async def createBinding(discordRole: discord.Role, robloxID: int,interaction: di
     except Exception as e:
         return e
 
+
+async def fetch_config(interaction: discord.Interaction):
+    db = Prisma()
+    await db.connect()
+    try:
+        serverObj = await db.server.find_unique(where={'serverID': interaction.guild_id})
+        return serverObj
+
+    except Exception as e:
+        return e
+
+
+async def findRole(discordRole: discord.role):
+    db = Prisma()
+    await db.connect()
+
+    try:
+        return
+
+    except Exception as e:
+        return e
     
     
 

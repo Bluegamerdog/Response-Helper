@@ -19,8 +19,8 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
                 description=embedDesc,
                 color=ErrorCOL
             )
-            response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
-            embed.set_footer(response.json()["name"])
+            embed.set_footer(text="TRU Helper In-Dev")
+            #embed.set_footer(response.json()["name"])
             return embed
 
         case "Success":
@@ -29,8 +29,9 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
                 description=embedDesc,
                 color=SuccessCOL
             )
-            response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
-            embed.set_footer(response.json()["name"])
+            #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
+            #embed.set_footer(response.json()["name"])
+            embed.set_footer(text="TRU Helper In-Dev")
             return embed
 
         case "Warning":
@@ -39,8 +40,9 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
                 description=embedDesc,
                 color=SuccessCOL
             )
-            response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
-            embed.set_footer(response.json()["name"])
+            #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
+            #embed.set_footer(response.json()["name"])
+            embed.set_footer(text="TRU Helper In-Dev")
             return embed
         case other:
             print("No valid Embed Type passed.")

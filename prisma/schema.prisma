@@ -56,4 +56,6 @@ model server {
   announceChannel        String
   logPermissionRole      String
   announcePermissionRole String
+  commandRole            String
+  developerRole          String
 }
