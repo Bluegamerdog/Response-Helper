@@ -28,7 +28,7 @@ class SealDBCommands(commands.GroupCog, group_name='TRURegistry'):
         pass
 
 
-#How does this even work? Does it work???
+
 class RegistryCmds(commands.GroupCog, group_name='devreg'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
