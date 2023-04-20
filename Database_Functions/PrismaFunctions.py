@@ -17,7 +17,27 @@ async def prismaFunc():
 """
 
 
-async def registerUser(discordID: int, profileLink: str, name: str):
+async def updateUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
+    try:
+        db = Prisma()
+        await db.connect()
+
+        User = await db.operative.update(where={'discordID': str(interaction.user.id)},
+                                         data={
+            'discordID': str(discordID),
+            'profileLink': profileLink,
+            'userName': name,
+            'rank': str(interaction.user.top_role.name),
+            'activeLog': False
+        })
+
+        await db.disconnect()
+        return True
+    except Exception as e:
+        return e
+
+
+async def registerUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
     try:
         db = Prisma()
         await db.connect()
@@ -26,12 +46,12 @@ async def registerUser(discordID: int, profileLink: str, name: str):
             'discordID': str(discordID),
             'profileLink': profileLink,
             'userName': name,
-            'rank': "Placeholder",
+            'rank': str(interaction.user.top_role.name),
             'activeLog': False
         })
 
         await db.disconnect()
-        return User
+        return True
     except Exception as e:
         return e
 
@@ -61,6 +81,7 @@ await prisma.operative.update({
 })
 """
 
+
 async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
     try:
         db = Prisma()
@@ -73,15 +94,17 @@ async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
         await db.operative.update(where={
             'discordID': str(interaction.user.id)
         }, data={
-            logs: {
-                connect: {
-                    logID: str(log.logID)
+            'logs': {
+                'connect': {
+                    'logID': str(log.logID)
                 }
-            }
+            },
+            'activeLog': True
         })
 
     except Exception as e:
         return e
+
 
 async def removeUser(discordID: int, interaction: discord.Interaction):
     try:
