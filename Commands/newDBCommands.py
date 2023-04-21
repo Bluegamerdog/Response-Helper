@@ -114,6 +114,22 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
 
     rolebind._params["role"].required = True
     rolebind._params["robloxid"].required = True
+    
+    @app_commands.command(name="viewbinds", description="View all set binds")
+    async def viewbinds(self, interaction: discord.Interaction):
+        try:
+            roles = await get_all_role_bindings()
+            if len(roles) > 0:
+                bind_list = discord.Embed(title=f"TRU Helper Rolebinds", color=TRUCommandCOL)
+                for role in roles:
+                    bind_list.add_field(name=f"➣ Rank Name: {role.rankName}", value=f"> Discord Role: <@&{role.discordRoleID}>\n> Roblox Rank ID: {role.RobloxRankID}", inline=False)
+                await interaction.response.send_message(embed=bind_list, ephemeral=True)
+            else:
+                await interaction.response.send_message("No role bindings found.")
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
 
     @app_commands.command(name="serverconfig", description="Configure bot permission settings")
     async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,

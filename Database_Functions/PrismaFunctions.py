@@ -143,6 +143,13 @@ async def createBinding(discordRole: discord.role, robloxID: int, interaction: d
     except Exception as e:
         return e
 
+async def get_all_role_bindings():
+    db = Prisma()
+    await db.connect()
+    roles = await db.ranks.find_many()
+    await db.disconnect()
+    return roles
+
 
 async def fetch_config(interaction: discord.Interaction):
     db = Prisma()
