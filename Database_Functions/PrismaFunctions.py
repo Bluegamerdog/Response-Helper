@@ -3,6 +3,7 @@ from discord.utils import get
 import discord
 import asyncio
 import urllib3
+import uuid
 
 """
 Prisma Template 
@@ -17,7 +18,7 @@ async def prismaFunc():
 """
 
 
-async def registerUser(discordID: int, profileLink: str, name: str):
+async def registerUser(discordID: int, profileLink: str, name: str, rankName: str):
     try:
         db = Prisma()
         await db.connect()
@@ -26,7 +27,7 @@ async def registerUser(discordID: int, profileLink: str, name: str):
             'discordID': str(discordID),
             'profileLink': profileLink,
             'userName': name,
-            'rank': "Placeholder",
+            'rank': rankName,
             'activeLog': False
         })
 
@@ -60,12 +61,24 @@ await prisma.operative.update({
     }
 })
 """
-
-async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
+async def fetchOperative(interaction: discord.Interaction):
     try:
         db = Prisma()
         await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
+        if operative:
+            return operative, True
+        else:
+            return "no operator registration matching you was found. Please make sure you are registered.", False
+    except Exception as e:
+        return e, False
+async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
+    try:
+        log_id = str(uuid.uuid4())[:8]
+        db = Prisma()
+        await db.connect()
         log = await db.logs.create({
+            'logID': log_id,
             'timeStarted': unixTime,
             'timeEnded': "Null",
             'timeElapsed': "Null",
@@ -73,15 +86,16 @@ async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
         await db.operative.update(where={
             'discordID': str(interaction.user.id)
         }, data={
-            logs: {
-                connect: {
-                    logID: str(log.logID)
+            'activeLog': True,
+            'logs': {
+                'connect': {
+                    'logID': log_id
                 }
             }
         })
-
+        return "Success", True
     except Exception as e:
-        return e
+        return e, False
 
 async def removeUser(discordID: int, interaction: discord.Interaction):
     try:
