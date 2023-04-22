@@ -18,14 +18,14 @@ from Database_Functions.MaindbFunctions import *
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import *
-from Commands.trumanagementcmds import ManagementCmds
+from Commands.trumanagementcmds import ManagementCmds, QuotaCmds
 from Commands.botcmds import BotCmds, DatabaseCmds
 from Commands.responsecmds import OperationCmds
 from Commands.othercmds import otherCmds
-from Commands.pointscmds import PointCmds, mypointsCmd
+from Commands.quotacmds import pointCmds, mypointsCmd
 from Commands.registrycmds import RegistryCmds
 from Commands.requestcmds import RequestCmds
-from Commands.newDBCommands import SealDBCommands
+from Commands.newDBCommands import SealDBCommands, DBCmds
 from Commands.testingcmds import testingCmds
 
 
@@ -42,12 +42,14 @@ async def on_ready():
     await bot.add_cog(ManagementCmds(bot))
     await bot.add_cog(OperationCmds(bot))
     await bot.add_cog(otherCmds(bot))
-    await bot.add_cog(PointCmds(bot))
+    #await bot.add_cog(QuotaCmds(bot))
     await bot.add_cog(mypointsCmd(bot))
     await bot.add_cog(RegistryCmds(bot))
     await bot.add_cog(RequestCmds(bot))
     await bot.add_cog(testingCmds(bot))
     await bot.add_cog(SealDBCommands(bot))
+    await bot.add_cog(QuotaCmds(bot))
+    #await bot.add_cog(DBCmds(bot))
     #await bot.add_cog(SealLoggingCommands(bot))
     
     

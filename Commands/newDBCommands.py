@@ -31,34 +31,6 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
 
-    @app_commands.command(name="register", description="Register with the TRU bot.")
-    async def register(self, interaction: discord.Interaction, profilelink: str):
-        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
-        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            dbResponse = await dbFuncs.registerUser(interaction.user.id, profilelink, interaction.user.nick,
-                                                    interaction.user.top_role.name)
-            if dbResponse:
-                successEmbed = embedBuilder("Success", embedTitle="Success!",
-                                            embedDesc="An operative with the following details was created: ")
-                operativeName = interaction.user.nick.split()
-                operativeName = operativeName[len(operativeName) - 1]
-                successEmbed.add_field(name="Operative name: ", value=operativeName)
-                successEmbed.add_field(name="Operative profile link: ", value=profilelink)
-                successEmbed.add_field(name="Operative rank: ", value=str(interaction.user.top_role.name))
-                successEmbed.add_field(name="Registered on: ", value=str(datetime.datetime.utcnow()) + "Z")
-                await interaction.response.send_message(embed=successEmbed)
-            else:
-                errEmbed = embedBuilder("Error", embedTitle="An error occured:",
-                                        embedDesc="Error: " + str(dbResponse))
-                await interaction.response.send_message(embed=errEmbed)
-
-
-
-        else:
-            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
-                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
-            await interaction.response.send_message(embed=errEmbed)
-
     @app_commands.command(name="startlog", description="Start a log.")
     async def startlog(self, interaction: discord.Interaction):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
@@ -125,12 +97,29 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     rolebind._params["role"].required = True
     rolebind._params["robloxid"].required = True
 
+    @app_commands.command(name="viewbinds", description="View all set binds")
+    async def viewbinds(self, interaction: discord.Interaction):
+        try:
+            roles = await get_all_role_bindings()
+            if len(roles) > 0:
+                bind_list = discord.Embed(title=f"TRU Helper Rolebinds", color=TRUCommandCOL)
+                for role in roles:
+                    bind_list.add_field(name=f"➣ Rank Name: {role.rankName}", value=f"> Discord Role: <@&{role.discordRoleID}>\n> Roblox Rank ID: {role.RobloxRankID}", inline=False)
+                await interaction.response.send_message(embed=bind_list, ephemeral=True)
+            else:
+                await interaction.response.send_message("No role bindings found.")
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+
     @app_commands.command(name="serverconfig", description="Configure bot permission settings")
     async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
                            announce_channel: discord.TextChannel, command_role: discord.Role,
                            developer_role: discord.Role, ping_role: discord.Role):
         db = Prisma()
         await db.connect()
+        await db.operative.f
         await db.server.upsert(where={
             'serverID': str(interaction.guild.id)
         },
@@ -173,7 +162,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     """
 
 
-class RegistryCmds(commands.GroupCog, group_name='devreg'):
+class DBCmds(commands.GroupCog, group_name='devreg'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 

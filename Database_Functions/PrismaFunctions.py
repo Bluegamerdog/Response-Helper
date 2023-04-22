@@ -18,21 +18,40 @@ async def prismaFunc():
 """
 
 
-async def registerUser(discordID: int, profileLink: str, name: str, rankName: str):
+async def updateUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
     try:
         db = Prisma()
         await db.connect()
 
-        User = await db.operative.create({
+        User = await db.operative.update(where={'discordID': str(interaction.user.id)},
+                                         data={
             'discordID': str(discordID),
             'profileLink': profileLink,
             'userName': name,
-            'rank': rankName,
+            'rank': str(interaction.user.top_role.name),
             'activeLog': False
         })
 
         await db.disconnect()
-        return User
+        return True
+    except Exception as e:
+        return e
+
+
+async def registerUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
+    try:
+        db = Prisma()
+        await db.connect()
+
+        await db.operative.create({
+            'discordID': str(discordID),
+            'userName': name,
+            'rank': str(interaction.user.top_role.name),
+            'profileLink': profileLink,
+            'activeLog': False
+        })
+        await db.disconnect()
+        return True
     except Exception as e:
         return e
 
@@ -61,17 +80,7 @@ await prisma.operative.update({
     }
 })
 """
-async def fetchOperative(interaction: discord.Interaction):
-    try:
-        db = Prisma()
-        await db.connect()
-        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
-        if operative:
-            return operative, True
-        else:
-            return "no operator registration matching you was found. Please make sure you are registered.", False
-    except Exception as e:
-        return e, False
+
 async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
     try:
         log_id = str(uuid.uuid4())[:8]
@@ -133,6 +142,13 @@ async def createBinding(discordRole: discord.role, robloxID: int, interaction: d
 
     except Exception as e:
         return e
+
+async def get_all_role_bindings():
+    db = Prisma()
+    await db.connect()
+    roles = await db.ranks.find_many()
+    await db.disconnect()
+    return roles
 
 
 async def fetch_config(interaction: discord.Interaction):

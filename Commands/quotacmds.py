@@ -1,5 +1,6 @@
 import asyncio
 import discord
+from prisma import Prisma
 from discord.ext import commands
 from discord import app_commands
 from Database_Functions.MaindbFunctions import *
@@ -8,6 +9,12 @@ from Functions.permFunctions import *
 from Functions.randFunctions import (get_point_quota, quota_prog_display)
 from Database_Functions.UserdbFunction import (get_users_amount, add_points, remove_points, get_points, db_register_get_data, reset_points)
 from Database_Functions.MaindbFunctions import (get_quota)
+from Functions.formattingFunctions import embedBuilder
+import Database_Functions.PrismaFunctions as dbFuncs
+import Database_Functions.PrismaFunctions as DBFunc
+from Functions import permFunctions
+
+# Embed types: Success, Warning, Error
 
 ### REWORK ###
 
@@ -151,7 +158,7 @@ class overviewButtons(discord.ui.View):
 
    
 
-class PointCmds(commands.GroupCog, group_name='points'):
+class pointCmds(commands.GroupCog, group_name='points'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
@@ -295,34 +302,28 @@ class mypointsCmd(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.client = bot
 
-    @app_commands.command(name="mypoints",description="View your point count.")
+    @app_commands.command(name="mydata",description="View your current quota status.")
     async def mypoints(self, interaction: discord.Interaction):
-        if not TRUMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
-        else:
-            points = get_points(interaction.user.id)
-            if points is False:
-                return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> No point data found!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL))
-            else:            
-                embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Point data found!")
-                data = db_register_get_data(interaction.user.id)
-                quota, rank = get_point_quota(interaction.user, data)
-                if quota:
-                    onloa = onLoA(interaction.user)
-                    percent = float(points / quota * 100)
-                    if percent:
-                        qm = quota_prog_display(percent, onloa)
-                    if onloa == True:
-                        quota = 0
-                    embed.add_field(name=f"{qm} {percent:.1f}% || {points}/{quota}", value="")
-                    if not data[4]:
-                        embed.add_field(name="", value=f"\n\nRank: **{rank}**\nPoints: **{points}**", inline=False)
-                    else:
-                        embed.add_field(name="", value=f"\n\nRank: **{rank}**\nPoints: **{points}**\nDays excused: **{data[4]}**", inline=False)
-                else:
-                    embed.add_field(name="", value="")
-                    embed.add_field(name="", value=f"Rank: {rank}\nPoints: **{points}**", inline=False)
+        try:
+            db = Prisma()
+            await db.connect()
+            data = await db.operative.find_unique(where={"discordID": f"{interaction.user.id}"})
+            log_amount = await db.logs.find_many(where={"operativeDiscordID": f"{interaction.user.id}"})
+            await db.disconnect()
+            if data == None:
+                return await interaction.response.send_message(embed=embedBuilder("Error", embedDesc=f"Unable to find userdata on {interaction.user.mention}. Make sure you are registered.", embedTitle="No data found!"))
+            else:
+                embed = embedBuilder("Success", embedTitle=f"<:dsbbotSuccess:953641647802056756> User data found!", embedDesc=f"Displaying {interaction.user.mention}'s data for block `TBA`.")
+                embed.add_field(name="TRU Rank", value=f"> {data.rank}", inline=True)
+                embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if onLoA(interaction.user) else f"> Activty Duty", inline=True)
+                embed.add_field(name="", value="", inline=False)
+                embed.add_field(name="Responses Attended", value=f"> `TBA`", inline=True) # Need to add response attendance count
+                embed.add_field(name="Patrols Logged", value=f"> {len(log_amount)}/Quota", inline=True) #(need to add something and be able to change quota at will)
                 await interaction.response.send_message(embed=embed)
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+                
 
 
 
