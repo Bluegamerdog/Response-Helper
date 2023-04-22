@@ -20,6 +20,8 @@ import time
 
 
 
+
+
 ### UPDATE FOR DATABASES ###
 
 
@@ -36,7 +38,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def register(self, interaction: discord.Interaction, profilelink: str):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            dbResponse = await dbFuncs.registerUser(interaction.user.id, profilelink, interaction.user.nick, interaction.user.top_role.name)
+            dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id ,profilelink, interaction.user.nick)
             if dbResponse:
                 successEmbed = embedBuilder("Success", embedTitle="Success!",
                                             embedDesc= "An operative with the following details was created: ")
@@ -137,6 +139,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
                            developer_role: discord.Role, ping_role: discord.Role):
         db = Prisma()
         await db.connect()
+        await db.operative.f
         await db.server.upsert(where={
             'serverID': str(interaction.guild.id)
         },
@@ -179,7 +182,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     """
 
 
-class RegistryCmds(commands.GroupCog, group_name='devreg'):
+class DBCmds(commands.GroupCog, group_name='devreg'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 

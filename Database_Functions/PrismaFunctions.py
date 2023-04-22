@@ -42,14 +42,13 @@ async def registerUser(interaction: discord.Interaction, discordID: int, profile
         db = Prisma()
         await db.connect()
 
-        User = await db.operative.create({
+        await db.operative.create({
             'discordID': str(discordID),
-            'profileLink': profileLink,
             'userName': name,
             'rank': str(interaction.user.top_role.name),
+            'profileLink': profileLink,
             'activeLog': False
         })
-
         await db.disconnect()
         return True
     except Exception as e:
