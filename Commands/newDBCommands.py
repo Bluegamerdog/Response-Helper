@@ -31,11 +31,38 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
 
+    @app_commands.command(name="register", description="Register in the DB")
+    async def register(self, interaction: discord.Interaction, profilelink: str):
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+            dbResponse = await dbFuncs.registerUser(interaction.user.id, profilelink, interaction.user.nick,
+                                                    interaction.user.top_role.name)
+            if dbResponse:
+                successEmbed = embedBuilder("Success", embedTitle="Success!",
+                                            embedDesc="An operative with the following details was created: ")
+                operativeName = interaction.user.nick.split()
+                operativeName = operativeName[len(operativeName) - 1]
+                successEmbed.add_field(name="Operative name: ", value=operativeName)
+                successEmbed.add_field(name="Operative profile link: ", value=profilelink)
+                successEmbed.add_field(name="Operative rank: ", value=str(interaction.user.top_role.name))
+                successEmbed.add_field(name="Registered on: ", value=str(datetime.datetime.utcnow()) + "Z")
+                await interaction.response.send_message(embed=successEmbed)
+            else:
+                errEmbed = embedBuilder("Error", embedTitle="An error occured:",
+                                        embedDesc="Error: " + str(dbResponse))
+                await interaction.response.send_message(embed=errEmbed)
+
+
+
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
     @app_commands.command(name="startlog", description="Start a log.")
     async def startlog(self, interaction: discord.Interaction):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            operativeResponse, operativeResponseBool = await fetchOperative(interaction)
+            operativeResponse, operativeResponseBool = await dbFuncs.fetch_operative(interaction)
             if operativeResponseBool:
                 date_time = datetime.datetime.now()
                 unixTime = int(time.mktime(date_time.timetuple()))
@@ -49,7 +76,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
                     await interaction.response.send_message(embed=errorEmbed)
             else:
                 errorEmbed = embedBuilder("Error", embedTitle="An error occurred.",
-                                          embedDesc="Error details: " + str(operativeResponse[0]))
+                                          embedDesc="Error details: " + str(operativeResponse))
                 await interaction.response.send_message(embed=errorEmbed)
 
 

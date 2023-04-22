@@ -162,11 +162,23 @@ async def fetch_config(interaction: discord.Interaction):
         return e
 
 
+async def fetch_operative(interaction: discord.Interaction):
+    try:
+        db = Prisma()
+        await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
+        return operative, True
+
+    except Exception as e:
+        return e, False
+
 async def findRole(discordRole: discord.role):
     db = Prisma()
     await db.connect()
 
     try:
+
+
         return
 
     except Exception as e:
