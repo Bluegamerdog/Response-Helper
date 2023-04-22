@@ -3,6 +3,7 @@ from discord.utils import get
 import discord
 import asyncio
 import urllib3
+import uuid
 
 """
 Prisma Template 
@@ -42,14 +43,13 @@ async def registerUser(interaction: discord.Interaction, discordID: int, profile
         db = Prisma()
         await db.connect()
 
-        User = await db.operative.create({
+        await db.operative.create({
             'discordID': str(discordID),
-            'profileLink': profileLink,
             'userName': name,
             'rank': str(interaction.user.top_role.name),
+            'profileLink': profileLink,
             'activeLog': False
         })
-
         await db.disconnect()
         return True
     except Exception as e:
@@ -81,12 +81,13 @@ await prisma.operative.update({
 })
 """
 
-
 async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
     try:
+        log_id = str(uuid.uuid4())[:8]
         db = Prisma()
         await db.connect()
         log = await db.logs.create({
+            'logID': log_id,
             'timeStarted': unixTime,
             'timeEnded': "Null",
             'timeElapsed': "Null",
@@ -94,17 +95,16 @@ async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
         await db.operative.update(where={
             'discordID': str(interaction.user.id)
         }, data={
+            'activeLog': True,
             'logs': {
                 'connect': {
-                    'logID': str(log.logID)
+                    'logID': log_id
                 }
-            },
-            'activeLog': True
+            }
         })
-
+        return "Success", True
     except Exception as e:
-        return e
-
+        return e, False
 
 async def removeUser(discordID: int, interaction: discord.Interaction):
     try:
@@ -143,6 +143,13 @@ async def createBinding(discordRole: discord.role, robloxID: int, interaction: d
     except Exception as e:
         return e
 
+async def get_all_role_bindings():
+    db = Prisma()
+    await db.connect()
+    roles = await db.ranks.find_many()
+    await db.disconnect()
+    return roles
+
 
 async def fetch_config(interaction: discord.Interaction):
     db = Prisma()
@@ -155,11 +162,23 @@ async def fetch_config(interaction: discord.Interaction):
         return e
 
 
+async def fetch_operative(interaction: discord.Interaction):
+    try:
+        db = Prisma()
+        await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
+        return operative, True
+
+    except Exception as e:
+        return e, False
+
 async def findRole(discordRole: discord.role):
     db = Prisma()
     await db.connect()
 
     try:
+
+
         return
 
     except Exception as e:

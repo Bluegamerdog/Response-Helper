@@ -5,16 +5,73 @@ import datetime
 import random
 from Functions.mainVariables import *
 from Functions.permFunctions import *
+from Functions.formattingFunctions import embedBuilder
 from Database_Functions.MaindbFunctions import (get_quota, set_active_block, get_all_quota_data)
-from Functions.randFunctions import (get_quota, getrank, changerank, change_nickname, get_user_id_from_link, get_point_quota)
-from Database_Functions.UserdbFunction import (db_register_get_data, set_days_onloa)
+from Functions.randFunctions import (get_quota, getrank, changerank, change_nickname, get_user_id_from_link)
+from Database_Functions.UserdbFunction import (db_register_get_data)
 from discord.ext import commands
 from discord import app_commands
 from discord import ui
 from roblox import *
 
-roblox = Client("_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_A249C7CBC0AD0C2157BCF1D7468ADA824736AA27889516B8B6CE8ECDB36DFDA0E8060ADEB457C5E09FC7A1890499AE2CCB105774F5110EDA6967AE9F8874F2DFC554568F0B2FA0E495127FBB713B39EBD7E807009540475DE2E6F6BA203325747382D6C7E8C43A382240F49576850B55B885A0A662C1FBD19A3653331C1BFA49D9CBBFFE01FCF21CD676E01981AE859ECAF81BD219052904AB26A81F39E9ADB0B3F3D7C2A24533E9849EE3B183192EBD3F039E51530411037FC26143AD12687A31F0B087AA57FDBB2B4C562A3F7CCD909F418D6EC6F04E8031C523C20B475A4A85D0E0DED5DD0DDEDB4D417B12C2944870F884D3B6D6734DE67C97982D678E45007C16AC1E218D4A5DA104D7CF57B79F6039C257AC8782FC4505F4D193D269DB05439E3C0E49D59AB39EA77A8335CA77126CD1B4CAABCC3826905C6CBFB11A19860B85B78300560974E04A0B5F40CCCC40062C91554179133B4284E15DFE0AB4B114605E45BA8FE25F718E36753BCC60DB8DD76E")    
+roblox = Client("_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_A249C7CBC0AD0C2157CF1D7468ADA824736AA27889516B8B6CE8ECDB36DFDA0E8060ADEB457C5E09FC7A1890499AE2CCB105774F5110EDA6967AE9F8874F2DFC554568F0B2FA0E495127FBB713B39EBD7E807009540475DE2E6F6BA203325747382D6C7E8C43A382240F49576850B55B885A0A662C1FBD19A3653331C1BFA49D9CBBFFE01FCF21CD676E01981AE859ECAF81BD219052904AB26A81F39E9ADB0B3F3D7C2A24533E9849EE3B183192EBD3F039E51530411037FC26143AD12687A31F0B087AA57FDBB2B4C562A3F7CCD909F418D6EC6F04E8031C523C20B475A4A85D0E0DED5DD0DDEDB4D417B12C2944870F884D3B6D6734DE67C97982D678E45007C16AC1E218D4A5DA104D7CF57B79F6039C257AC8782FC4505F4D193D269DB05439E3C0E49D59AB39EA77A8335CA77126CD1B4CAABCC3826905C6CBFB11A19860B85B78300560974E04A0B5F40CCCC40062C91554179133B4284E15DFE0AB4B114605E45BA8FE25F718E36753BCC60DB8DD76E")    
 
+class QuotaCmds(commands.GroupCog, group_name='quota'):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+    @app_commands.command(name="block",description="Updates the quota block data. [TRUPC+]")
+    @app_commands.describe(block="Enter a block number 7 through 26.", action="View: See info about a specific block. || Change: Set a new active block. || List: See a list of all pre-set blocks.")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="view", value="view"),
+        app_commands.Choice(name="change", value="change"),
+        app_commands.Choice(name="list_all", value="list"),
+        ])
+    async def updatequota(self, interaction:discord.Interaction, action:app_commands.Choice[str], block:int=None):
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL))
+        all_blockdata, rows = get_all_quota_data()
+        if rows == 0:
+                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota block data found!", description="There are no quota blocks in the database.", color=ErrorCOL))
+        if action.value == "list":
+            msg = f"I found data on {rows} block!\n\n" if rows == 1 else f"I found data on {rows} blocks!\n\n"
+            for data in all_blockdata:
+                msg += f"**Block {data[0]}** // Active: {bool(data[3])}\n<t:{data[1]}> - <t:{data[2]}>\n\n"
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotInformation:1093651827234443266> List of Quota Blocks", description=msg, color=HRCommandsCOL), ephemeral=True)
+        if not block:
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No block found!", description="Please enter a block's number to view or activate it.", color=ErrorCOL))
+        blockdata = get_quota()
+        req_blockdata = get_quota(block_num=block)
+        if req_blockdata:
+            if action.value == "view":
+                return await interaction.response.send_message(embed = discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotInformation:1093651827234443266> Quota Block {req_blockdata[0]}", description=f"**Start Date:** <t:{req_blockdata[1]}:F>\n**End Date:** <t:{req_blockdata[2]}:F>\n**Active:** {bool(req_blockdata[3])}"), ephemeral=True)
+            elif action.value == "change":
+                if blockdata: # Check if there is an active block
+                    if block == blockdata[0]: # Given block is already active
+                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:dsbbotCaution:1067970676041982053> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
+                    else: # If there was an active block but it is now changed
+                        set_active_block(block_num=block)
+                        new_blockdata = get_quota()
+                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
+                else: # There is now an active quota block
+                    set_active_block(block_num=block)
+                    new_blockdata = get_quota()
+                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
+        else:
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
+
+    @app_commands.command(name="modify",description="Updates the quota block data. [TRUPC+]")
+    @app_commands.describe(new_amount="Set the new quota requiremnt here if it is being changed.", action="View: See the current quota. || log_amount: Set the log quota. || attendance_amount: Set the attendance quota. || toggle: Enable/disable the quota. (Quota=0)")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="view", value="view"),
+        app_commands.Choice(name="log_amount", value="logs"),
+        app_commands.Choice(name="attendance_amount", value="attendance"),
+        app_commands.Choice(name="toggle", value="toggle"),
+        ])
+    async def modify_quota(self, interaction:discord.Interaction, action:app_commands.Choice[str], new_amount:int=None):
+        return await interaction.response.send_message(embed=embedBuilder("Warning", embedDesc="This command isn't done yet.",embedTitle="No worki yeti"), ephemeral=True)
+        # Will work on after some sleep but needs a DB integration
+
+    
 class ManagementCmds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -169,48 +226,7 @@ class ManagementCmds(commands.Cog):
             await member.kick(reason=reason)
         except Exception as e:
             print(e)
-            await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Error!", description=f"An error occurred while accepting {username}: {str(e)}"), ephemeral=True)
-    
-    @app_commands.command(name="quota",description="Updates the quota block data. [TRUPC+]")
-    @app_commands.describe(block="Enter a block number 7 through 26.")
-    @app_commands.choices(action=[
-        app_commands.Choice(name="view block", value="view"),
-        app_commands.Choice(name="change block", value="change"),
-        app_commands.Choice(name="view list", value="list"),
-        ])
-    async def updatequota(self, interaction:discord.Interaction, action:app_commands.Choice[str], block:int):
-        if not TRULEAD(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL))
-        all_blockdata, rows = get_all_quota_data()
-        if rows == 0:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota block data found!", description="There are no quota blocks in the database.", color=ErrorCOL))
-        if action.value == "list":
-            msg = f"I found data on {rows} block!\n\n" if rows == 1 else f"I found data on {rows} blocks!\n\n"
-            for data in all_blockdata:
-                msg += f"**Block {data[0]}** // Active: {bool(data[3])}\n<t:{data[1]}> - <t:{data[2]}>\n\n"
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotInformation:1093651827234443266> List of Quota Blocks", description=msg, color=HRCommandsCOL), ephemeral=True)
-        
-        blockdata = get_quota()
-        req_blockdata = get_quota(block_num=block)
-        
-        if req_blockdata:
-            if action.value == "view":
-                return await interaction.response.send_message(embed = discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotInformation:1093651827234443266> Quota Block {req_blockdata[0]}", description=f"**Start Date:** <t:{req_blockdata[1]}:F>\n**End Date:** <t:{req_blockdata[2]}:F>\n**Active:** {bool(req_blockdata[3])}"), ephemeral=True)
-            elif action.value == "change":
-                if blockdata: # Check if there is an active block
-                    if block == blockdata[0]: # Given block is already active
-                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:dsbbotCaution:1067970676041982053> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
-                    else: # If there was an active block but it is now changed
-                        set_active_block(block_num=block)
-                        new_blockdata = get_quota()
-                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
-                else: # There is now an active quota block
-                    set_active_block(block_num=block)
-                    new_blockdata = get_quota()
-                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
-        else:
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
-            
+            await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Error!", description=f"An error occurred while accepting {username}: {str(e)}"), ephemeral=True)        
 
     @app_commands.command(name="trustrike", description="Used to give out strikes in TRU.")
     async def tru_stike(self, interaction:discord.Interaction, member:discord.Member, reason:str):
