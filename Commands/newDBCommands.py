@@ -19,12 +19,13 @@ import datetime
 import time
 
 
+
+
+
 ### UPDATE FOR DATABASES ###
 
 
 # Gave up and decided to rewrite it myself, command uses profile link and then discovers the rest on it's own
-
-
 
 # Need group role IDs to complete setup here, as of now it works manually
 class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
@@ -35,10 +36,9 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def register(self, interaction: discord.Interaction, profilelink: str):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            dbResponse = await dbFuncs.registerUser(interaction.user.id, profilelink, interaction.user.nick,
-                                                    interaction.user.top_role.name)
+            dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, interaction.user.nick)
             if dbResponse:
-                successEmbed = embedBuilder("Success", embedTitle="Success!",
+                successEmbed = embedBuilder("Successfully Registered", embedTitle="Success!",
                                             embedDesc="An operative with the following details was created: ")
                 operativeName = interaction.user.nick.split()
                 operativeName = operativeName[len(operativeName) - 1]
@@ -58,6 +58,8 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
             errEmbed = embedBuilder("Error", embedTitle="Permission error:",
                                     embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
             await interaction.response.send_message(embed=errEmbed)
+            
+            
     @app_commands.command(name="startlog", description="Start a log.")
     async def startlog(self, interaction: discord.Interaction):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
@@ -124,6 +126,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     rolebind._params["role"].required = True
     rolebind._params["robloxid"].required = True
 
+
     @app_commands.command(name="viewbinds", description="View all set binds")
     async def viewbinds(self, interaction: discord.Interaction):
         try:
@@ -138,9 +141,15 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
         except Exception as e:
             errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
             await interaction.response.send_message(embed=errEmbed, ephemeral=True)
-
-
-    @app_commands.command(name="serverconfig", description="Configure bot permission settings")
+    
+    #Temporary command
+    @app_commands.command(name="emojis", description="Just to send all the emojis of TRU bot.")
+    async def emojiembed(self, interaction:discord.Interaction):
+        embed = embedBuilder("Success", embedTitle="TRU Helper emojis:", 
+                             embedDesc="<:trubotAccepted:1096225940578766968> `<:trubotAccepted:1096225940578766968>`\n<:trubotDenied:1099642433588965447> `<:trubotDenied:1099642433588965447>`\n<:trubotAbstain:1099642858505515018> `<:trubotAbstain:1099642858505515018>`\n<:trubotWarning:1099642918974783519> `<:trubotWarning:1099642918974783519>`\n<:trubotBeingLookedInto:1099642414303559720> `<:trubotBeingLookedInto:1099642414303559720>`\n<:trubotApproved:1099642447526637670> `<:trubotApproved:1099642447526637670>`\n<:trubotTRU:1096226111458918470> `<:trubotTRU:1096226111458918470>`")
+        await interaction.response.send_message(embed=embed)
+    
+    @app_commands.command(name="setserverconfig", description="Configure bot permission settings")
     async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
                            announce_channel: discord.TextChannel, command_role: discord.Role,
                            developer_role: discord.Role, ping_role: discord.Role):
@@ -173,13 +182,88 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
 
         embed = embedBuilder(embedType="Success", embedTitle="Success!",
                              embedDesc="A configuration with the following details was made: ")
-        embed.add_field(name="Role to ping for announcements: ", value="<@&" + str(ping_role.id) + ">")
-        embed.add_field(name="Role permission for logging: ", value="<@&" + str(logrole.id) + ">")
-        embed.add_field(name="Role permission for scheduling: ", value="<@&" + str(schedule_role.id) + ">")
-        embed.add_field(name="Announcements channel: ", value="<#" + str(announce_channel.id) + ">")
-        embed.add_field(name="TRU Command role: ", value="<@&" + str(command_role.id) + ">")
-        embed.add_field(name="Developer role: ", value="<@&" + str(developer_role.id) + ">")
+        embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
+        embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
+        embed.add_field(name="Response Leaders: ", value="<@&" + str(schedule_role.id) + ">")
+        embed.add_field(name="Response announcements channel: ", value="<#" + str(announce_channel.id) + ">")
+        embed.add_field(name="TRU Leadership role: ", value="<@&" + str(command_role.id) + ">")
+        embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
         await interaction.response.send_message(embed=embed, ephemeral=False)
+
+
+
+    
+    @app_commands.command(name="editconfig", description="Edit bot permission settings")
+    async def editconfig(self, interaction: discord.Interaction, logrole: discord.Role = None,
+                        schedule_role: discord.Role = None, announce_channel: discord.TextChannel = None,
+                        command_role: discord.Role = None, developer_role: discord.Role = None,
+                        ping_role: discord.Role = None):
+        db = Prisma()
+        await db.connect()
+
+        server_config = await db.server.find_first(where={'serverID': str(interaction.guild.id)})
+        if not server_config:
+            await interaction.response.send_message(
+                "Configuration not found. Please use the `/serverconfig` command to create a configuration first.",
+                ephemeral=True)
+            return
+
+        update_data = {}
+        if logrole:
+            update_data['logPermissionRole'] = str(logrole.id)
+        if schedule_role:
+            update_data['announcePermissionRole'] = str(schedule_role.id)
+        if announce_channel:
+            update_data['announceChannel'] = str(announce_channel.id)
+        if command_role:
+            update_data['commandRole'] = str(command_role.id)
+        if developer_role:
+            update_data['developerRole'] = str(developer_role.id)
+        if ping_role:
+            update_data['announceRole'] = str(ping_role.id)
+
+        await db.server.update(where={'serverID': str(interaction.guild.id)}, data=update_data)
+        await db.disconnect()
+
+        embed = embedBuilder(embedType="Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully updated server configs!",
+                            embedDesc=f"{interaction.guild.name}'s Server Configuration updated: ")
+        if ping_role:
+            embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
+        if logrole:
+            embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
+        if schedule_role:
+            embed.add_field(name="Response Leaders: ", value="<@&" + str(schedule_role.id) + ">")
+        if announce_channel:
+            embed.add_field(name="Response announcements channel: ", value="<#" + str(announce_channel.id) + ">")
+        if command_role:
+            embed.add_field(name="TRU Leadership role: ", value="<@&" + str(command_role.id) + ">")
+        if developer_role:
+            embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
+
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+
+
+
+        
+    @app_commands.command(name="viewconfig", description="View the current server configs.")
+    async def viewconfig(self, interaction: discord.Interaction):
+        db = Prisma()
+        await db.connect()
+        server_config = await db.server.find_first(where={"serverID": str(interaction.guild.id)})
+        await db.disconnect()
+
+        if server_config:
+            embed = embedBuilder("Success", embedTitle=f"{interaction.guild.name} || Server Configurations", embedDesc=None)
+            embed.add_field(name="Response pings:", value=f"<@&{server_config.announceRole}>")
+            embed.add_field(name="Member role:", value=f"<@&{server_config.logPermissionRole}>")
+            embed.add_field(name="Response Leaders:", value=f"<@&{server_config.announceRole}>")
+            embed.add_field(name="Response announcement channel:", value=f"<#{server_config.announceChannel}>")
+            embed.add_field(name="TRU Leadership role:", value=f"<@&{server_config.commandRole}>")
+            embed.add_field(name="TRU Helper Dev role:", value=f"<@&{server_config.developerRole}>")
+            await interaction.response.send_message(embed=embed, ephemeral=False)
+        else:
+            await interaction.response.send_message(content="No server configuration found", ephemeral=True)
+
 
     """
     @app_commands.command(name="sanity", description="Register yourself with the TRU bot!")
