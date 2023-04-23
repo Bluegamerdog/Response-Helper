@@ -19,9 +19,6 @@ import datetime
 import time
 
 
-
-
-
 ### UPDATE FOR DATABASES ###
 
 
@@ -38,10 +35,11 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def register(self, interaction: discord.Interaction, profilelink: str):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id ,profilelink, interaction.user.nick)
+            dbResponse = await dbFuncs.registerUser(interaction.user.id, profilelink, interaction.user.nick,
+                                                    interaction.user.top_role.name)
             if dbResponse:
                 successEmbed = embedBuilder("Success", embedTitle="Success!",
-                                            embedDesc= "An operative with the following details was created: ")
+                                            embedDesc="An operative with the following details was created: ")
                 operativeName = interaction.user.nick.split()
                 operativeName = operativeName[len(operativeName) - 1]
                 successEmbed.add_field(name="Operative name: ", value=operativeName)
@@ -64,13 +62,22 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def startlog(self, interaction: discord.Interaction):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-
-            date_time = datetime.datetime.now()
-            unixTime = int(time.mktime(date_time.timetuple()))
-
-            successEmbed = embedBuilder("Warning", embedTitle="The current time is: ", embedDesc=("I hate python (this is zulu time): <t:" + str(unixTime) + ":f>"))
-            print(successEmbed)
-            await interaction.response.send_message(embed=successEmbed)
+            operativeResponse, operativeResponseBool = await dbFuncs.fetch_operative(interaction)
+            if operativeResponseBool:
+                date_time = datetime.datetime.now()
+                unixTime = int(time.mktime(date_time.timetuple()))
+                dbResponse, dbResponseBool = await dbFuncs.prismaCreatelog(interaction, str(unixTime))
+                if dbResponseBool == True:
+                    successEmbed = embedBuilder("Success", embedTitle="Log successful started! ", embedDesc=("Log started at: <t:" + str(unixTime) + ":f>"))
+                    print(successEmbed)
+                    await interaction.response.send_message(embed=successEmbed)
+                else:
+                    errorEmbed = embedBuilder("Error", embedTitle="An error occurred.", embedDesc="Error details: " + str(dbResponse))
+                    await interaction.response.send_message(embed=errorEmbed)
+            else:
+                errorEmbed = embedBuilder("Error", embedTitle="An error occurred.",
+                                          embedDesc="Error details: " + str(operativeResponse))
+                await interaction.response.send_message(embed=errorEmbed)
 
 
         else:
@@ -116,7 +123,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
 
     rolebind._params["role"].required = True
     rolebind._params["robloxid"].required = True
-    
+
     @app_commands.command(name="viewbinds", description="View all set binds")
     async def viewbinds(self, interaction: discord.Interaction):
         try:

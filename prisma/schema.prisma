@@ -41,7 +41,7 @@ model ranks {
 }
 
 model logs {
-  logID              String     @id @unique @default(cuid())
+  logID              String     @id @unique
   timeStarted        String
   timeEnded          String
   timeElapsed        String
