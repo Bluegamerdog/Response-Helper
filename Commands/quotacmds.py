@@ -297,7 +297,6 @@ class pointCmds(commands.GroupCog, group_name='points'):
             msg_sent = await interaction.edit_original_response(embed=embed, view = overviewButtons(self.bot))
             add_leaderboard(interaction.user.id, msg_sent.id, count)
 
-## WORKS ##
 class mypointsCmd(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.client = bot
@@ -316,7 +315,7 @@ class mypointsCmd(commands.Cog):
                 embed = embedBuilder("Success", embedTitle=f"<:dsbbotSuccess:953641647802056756> User data found!", embedDesc=f"Displaying {interaction.user.mention}'s data for block `TBA`.")
                 embed.add_field(name="TRU Rank", value=f"> {data.rank}", inline=True)
                 embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if onLoA(interaction.user) else f"> Activty Duty", inline=True)
-                embed.add_field(name="", value="", inline=False)
+                embed.add_field(name="", value="", inline=False) # Filler for 2x2 field config because discord
                 embed.add_field(name="Responses Attended", value=f"> `TBA`", inline=True) # Need to add response attendance count
                 embed.add_field(name="Patrols Logged", value=f"> {len(log_amount)}/Quota", inline=True) #(need to add something and be able to change quota at will)
                 await interaction.response.send_message(embed=embed)

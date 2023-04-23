@@ -84,7 +84,7 @@ class ManagementCmds(commands.Cog):
     app_commands.Choice(name="Elite Operator", value="EOPR"),
     app_commands.Choice(name="Operator", value="OPR"),
     app_commands.Choice(name="Entrant", value="ENT"),])
-    async def rank_cmd(self, interaction:discord.Interaction, user:discord.Member, rank:app_commands.Choice[str]):
+    async def trurank_user(self, interaction:discord.Interaction, user:discord.Member, rank:app_commands.Choice[str]):
         if not TRULEAD(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL), ephemeral=True)
         elif not TRUROLE(user):
@@ -193,7 +193,7 @@ class ManagementCmds(commands.Cog):
         await interaction.response.send_message(embed=discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Success!",description=f"{member.name} should now have their roles and should have received the welcome message :D"), ephemeral=True)
         
     @app_commands.command(name="truaccept", description="Used to accept new TRU members into the roblox group.")
-    async def join_tru(self, interaction:discord.Interaction, member:discord.Member):
+    async def truaccept_group(self, interaction:discord.Interaction, member:discord.Member):
         if not TRULEAD(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
         try:
@@ -208,7 +208,7 @@ class ManagementCmds(commands.Cog):
             await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Error!", description=f"An error occurred while accepting {username}: {str(e)}"), ephemeral=True)
 
     @app_commands.command(name="trukick", description="Used to kick TRU members.")
-    async def kick_tru(self, interaction:discord.Interaction, member:discord.Member, reason:str):
+    async def trukick_user(self, interaction:discord.Interaction, member:discord.Member, reason:str):
         if not TRULEAD(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
         try:
@@ -228,8 +228,8 @@ class ManagementCmds(commands.Cog):
             print(e)
             await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Error!", description=f"An error occurred while accepting {username}: {str(e)}"), ephemeral=True)        
 
-    @app_commands.command(name="trustrike", description="Used to give out strikes in TRU.")
-    async def tru_stike(self, interaction:discord.Interaction, member:discord.Member, reason:str):
+    @app_commands.command(name="trustrike", description="Give out strikes in TRU.")
+    async def trustrike_user(self, interaction:discord.Interaction, member:discord.Member, reason:str):
         if not TRULEAD(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRUPC or above to use this command."), ephemeral=True)
         else:
@@ -242,8 +242,8 @@ class ManagementCmds(commands.Cog):
             await member.send(embed = discord.Embed(title=f"You have received a strike in Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
             pass
     
-    @app_commands.command(name="trustrikes", description="Used to view strikes in TRU.")
-    async def tru_strikes(self, interaction:discord.Interaction, member:discord.Member=None):
+    @app_commands.command(name="trustrikes", description="See a users moderation history in TRU.")
+    async def trustrikesview_user(self, interaction:discord.Interaction, member:discord.Member=None):
         if member == None:
             member = interaction.user
         if member != interaction.user and TRULEAD(interaction.user) == False:
