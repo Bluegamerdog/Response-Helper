@@ -55,7 +55,7 @@ def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
     label = trello.get_label(label_id, boardid)
     newCard.add_label(label)
         
-    return newCard.short_url
+    return newCard
 
 def set_card_completed(card_url:str):
     card_id = card_url.split('/')[-1]
@@ -69,3 +69,8 @@ def get_member(id):
     member = trello.get_member(id)
     return member.username, member.full_name
 
+def get_trello_card(card_id):
+
+    card = trello.get_card(card_id)
+
+    return card

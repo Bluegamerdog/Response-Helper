@@ -38,10 +38,9 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, interaction.user.nick)
             if dbResponse:
-                successEmbed = embedBuilder("Successfully Registered", embedTitle="Success!",
+                successEmbed = embedBuilder("Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully Registered!",
                                             embedDesc="An operative with the following details was created: ")
-                operativeName = interaction.user.nick.split()
-                operativeName = operativeName[len(operativeName) - 1]
+                operativeName = interaction.user.nick.split()[-1]
                 successEmbed.add_field(name="Operative name: ", value=operativeName)
                 successEmbed.add_field(name="Operative profile link: ", value=profilelink)
                 successEmbed.add_field(name="Operative rank: ", value=str(interaction.user.top_role.name))
@@ -155,7 +154,7 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
                            developer_role: discord.Role, ping_role: discord.Role):
         db = Prisma()
         await db.connect()
-        await db.operative.f
+        #await db.operative.
         await db.server.upsert(where={
             'serverID': str(interaction.guild.id)
         },
@@ -293,7 +292,7 @@ class DBCmds(commands.GroupCog, group_name='devreg'):
             if user == None or user == interaction.user:
                 try:
                     if db_register_new(str(interaction.user), interaction.user.id, roblox_profile_link):
-                        embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Successfully registered!",
+                        embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Successfully registered!",
                                               description=f"`Username:` {interaction.user}\n`User ID:` {interaction.user.id}\n`Roblox Profile:` {roblox_profile_link}",
                                               color=discord.Color.green())
                     else:
@@ -307,7 +306,7 @@ class DBCmds(commands.GroupCog, group_name='devreg'):
                 try:
                     if db_register_new(str(user), user.id, roblox_profile_link):
                         embed = discord.Embed(
-                            title=f"<:dsbbotSuccess:953641647802056756> Successfully registered {user}!",
+                            title=f"<:trubotAccepted:1096225940578766968> Successfully registered {user}!",
                             description=f"`Username:` {user}\n`User ID:` {user.id}\n`Roblox Profile:` {roblox_profile_link}",
                             color=discord.Color.green())
                     else:

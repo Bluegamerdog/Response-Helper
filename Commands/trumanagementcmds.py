@@ -47,15 +47,15 @@ class QuotaCmds(commands.GroupCog, group_name='quota'):
             elif action.value == "change":
                 if blockdata: # Check if there is an active block
                     if block == blockdata[0]: # Given block is already active
-                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:dsbbotCaution:1067970676041982053> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
+                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:trubotWarning:1099642918974783519> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
                     else: # If there was an active block but it is now changed
                         set_active_block(block_num=block)
                         new_blockdata = get_quota()
-                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
+                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
                 else: # There is now an active quota block
                     set_active_block(block_num=block)
                     new_blockdata = get_quota()
-                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
+                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
         else:
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
 
@@ -98,7 +98,7 @@ class ManagementCmds(commands.Cog):
                     await user.edit(nick=change_nickname("Staff Sergeant", user.display_name))
                     await user.add_roles(newrank_role)
                     await user.remove_roles(oldrank_role)
-                    embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Congrats!", description=f"You can now host your own operations, without the need for supervision! <a:dsbbotCelebration:1084176617993162762>", color=SuccessCOL)
+                    embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Congrats!", description=f"You can now host your own operations, without the need for supervision! <a:dsbbotCelebration:1084176617993162762>", color=SuccessCOL)
                     embed.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
                     return await interaction.response.send_message(content=f"{user.mention}", embed=embed)
                 else:
@@ -144,7 +144,7 @@ class ManagementCmds(commands.Cog):
                         if newrank[1] >= 20 and userrank[1] < 20:
                             soup_role = discord.utils.get(interaction.guild.roles, name="Operation Supervisor")
                             await user.add_roles(soup_role)
-                        embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Promotion!", description=f"You have been promoted from **{userrank[0]}** to **{newrank[0]}**! <a:dsbbotCelebration:1084176617993162762>", color=SuccessCOL)
+                        embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion!", description=f"You have been promoted from **{userrank[0]}** to **{newrank[0]}**! <a:dsbbotCelebration:1084176617993162762>", color=SuccessCOL)
                         embed.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
                         return await interaction.response.send_message(content=f"{user.mention}", embed=embed)
                     except Exception as e:
@@ -168,7 +168,7 @@ class ManagementCmds(commands.Cog):
                         if userrank[1] >= 20 and newrank[1] < 20:
                             soup_role = discord.utils.get(interaction.guild.roles, name="Operation Supervisor")
                             await user.remove_roles(soup_role)
-                        embed = discord.Embed(title="<:dsbbotCaution:1067970676041982053> Demotion!", description=f"You have been demoted from **{userrank[0]}** to **{newrank[0]}**.", color=ErrorCOL)
+                        embed = discord.Embed(title="<:trubotWarning:1099642918974783519> Demotion!", description=f"You have been demoted from **{userrank[0]}** to **{newrank[0]}**.", color=ErrorCOL)
                         embed.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
                         return await interaction.response.send_message(content=f"{user.mention}", embed=embed)
                     except Exception as e:
@@ -190,7 +190,7 @@ class ManagementCmds(commands.Cog):
         await member.add_roles(TRUPvt, TRURole, ServerAccessRole)
         await TRUondutychannel.send(f"TRU, please welcome {member.mention}!")
         await member.send(embed=discord.Embed(color=TRUCommandCOL, title=f"Welcome to Defensive Squadron Bravo {member.name}!", description=f"Alrighty...you should now have your roles...\n\nHello and welcome to QSO's Defensive Squadron Bravo. I am TRU Helper and as my name already suggests, I help manage this squadron.\n\nFirst things first, please update to your nickname to include `TRU Pvt` as your rank tag and your Roblox username. Additionally please add the `| TRU` suffix to your name in main QSO, you'll receive the TRU role once you pass your private phase. The TRU Private phase, in short, is our version of the OiT phase from main QSO, with a couple of amendments. You can find more information about the Private phase in <#960601856298602617> and an end date for said Private phase will be given to you as soon as possible.\n\nNext, please read through  <#954443926264217701>, <#957983615315222529>, <#957789241813917766> and all the other miscellaneous infoboards. I should also note that while in TRU, you are to never speak ill of other squadrons or display an form of squadron elitism or egotism. If found to be participating in these actions, you will be swiftly removed without warning.\n\nAnd on that note, TRU Management wishes you the best of luck on your Private phase, and we hope to see you excel as a defensive operative.\n\n<:TRU:1060271947725930496> *In the face of danger, we stand our ground!* <:TRU:1060271947725930496>"))
-        await interaction.response.send_message(embed=discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Success!",description=f"{member.name} should now have their roles and should have received the welcome message :D"), ephemeral=True)
+        await interaction.response.send_message(embed=discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Success!",description=f"{member.name} should now have their roles and should have received the welcome message :D"), ephemeral=True)
         
     @app_commands.command(name="truaccept", description="Used to accept new TRU members into the roblox group.")
     async def truaccept_group(self, interaction:discord.Interaction, member:discord.Member):
@@ -201,7 +201,7 @@ class ManagementCmds(commands.Cog):
             group = await roblox.get_group(15155104)
             user = await roblox.get_user_by_username(username)
             await group.accept_user(user)
-            await interaction.response.send_message(embed=discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Accepted {username}!"), ephemeral=True)
+            await interaction.response.send_message(embed=discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Accepted {username}!"), ephemeral=True)
             await member.send(embed = discord.Embed(description=f"Your request to join the `Defensive Squadron Bravo` Roblox group has been accepted.", color=TRUCommandCOL))
         except Exception as e:
             print(e)
@@ -220,7 +220,7 @@ class ManagementCmds(commands.Cog):
             kickembed.set_thumbnail(url=member.avatar.url)
             kickembed.set_footer(text=f"ID: {member.id} • {datetime.datetime.now().strftime('%m/%d/%Y %H:%M %p')}")
             logmsg = await logsch.send(embed=kickembed)
-            await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL))
+            await interaction.response.send_message(embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL))
             await member.send(embed = discord.Embed(title=f"You have been kicked from Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
             await group.kick_user(user)
             await member.kick(reason=reason)
@@ -238,7 +238,7 @@ class ManagementCmds(commands.Cog):
             strikeemb.set_footer(text=f"ID: {member.id} • {datetime.datetime.now().strftime('%m/%d/%Y %H:%M %p')}")
             logsch = self.bot.get_channel(1054705433971003412) # 1008449677210943548 #audit-logs
             logmsg = await logsch.send(embed=strikeemb)
-            await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Member striked", description=f"Successfully striked {member.mention}.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL))
+            await interaction.response.send_message(embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Member striked", description=f"Successfully striked {member.mention}.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL))
             await member.send(embed = discord.Embed(title=f"You have received a strike in Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
             pass
     
@@ -254,7 +254,7 @@ class ManagementCmds(commands.Cog):
             if not warnings:
                 return await interaction.response.send_message(
                     embed=discord.Embed(
-                        title="<:dsbbotDisabled2:1067970678608908288> No warnings found",
+                        title="<:trubotAbstain:1099642858505515018> No warnings found",
                         description=f"No warnings found for {member.mention}.",
                         color=DarkRedCOL
                     )

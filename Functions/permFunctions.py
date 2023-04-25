@@ -3,8 +3,8 @@ import discord
 
 
 def checkPermission(userRole: discord.role, targetRole: discord.role):
-    print("User role: " + str(userRole.position))
-    print("Target role: " + str(targetRole.position))
+    #print("User role: " + str(userRole.position))
+    #print("Target role: " + str(targetRole.position))
     return userRole.position >= targetRole.position
 
 
@@ -61,12 +61,8 @@ def onLoA(user):  # On Leave of Absence
 
 
 def DEVACCESS(user: discord.Member):
-    if user.guild_permissions.administrator or str(user.id) == "776226471575683082":
-        return True
-    else:
-        conn, cur = userget_conn()
-        cur.execute(f"SELECT user_ids FROM devaccess WHERE user_ids LIKE '%{user.id}%'")
-        result = cur.fetchone()
-        if result:
+    roles = user.roles
+    for role in roles:
+        if role.name in ["TRU Helper Developer"]:
             return True
     return False

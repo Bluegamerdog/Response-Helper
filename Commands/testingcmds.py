@@ -8,6 +8,7 @@ from Database_Functions.MaindbFunctions import *
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import 
+import uuid
 from Functions.trelloFunctions import (create_response_card, get_members, get_member)
 
 truAccept = discord.PartialEmoji(name="trubotAccepted", id=1096225940578766968)
@@ -44,14 +45,14 @@ class testingCmds(commands.Cog):
         kickembed.set_thumbnail(url=member.avatar.url)
         kickembed.set_footer(text=f"ID: {member.id} • {datetime.datetime.now().strftime('%m/%d/%Y %H:%M %p')}")
         logmsg = await logsch.send(embed=kickembed)
-        await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL),ephemeral=True)
+        await interaction.response.send_message(embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL),ephemeral=True)
         await member.send(embed = discord.Embed(title=f"You have been kicked from Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
 
     @app_commands.command(name="testing", description="Free")
     async def testing3(self, interaction:discord.Interaction, id:str=None):
-        await interaction.response.send_message("<:trubotAccepted:1096225940578766968>")
+        responseID = str(uuid.uuid4())[:8]
         
-        await interaction.edit_original_response(content=truAccept)
+        await interaction.response.send_message(content=f"{responseID}", ephemeral=True)
 
     @app_commands.command(name="length", description="Temporary command to get time/points ratio.")
     async def pointscmddiw(self, interaction:discord.Interaction, length:int):
@@ -74,7 +75,7 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
         loginfo.add_field(name="Useful links", value="[TRU Infoboard](https://discord.com/channels/949470602366976051/954443926264217701)\nTo be added...\nTo be added...\nTo be added...")
         loginfo.set_footer(text="The current centralised time is " + str(datetime.utcnow()))
         if await interaction.user.send(embed=loginfo):
-            startedlog = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Your log has begun!", description="More information has been sent to your DMs.\n*Have a nice patrol!*", color=0x0b9f3f)
+            startedlog = discord.Embed(title="<:trubotAccepted:1096225940578766968> Your log has begun!", description="More information has been sent to your DMs.\n*Have a nice patrol!*", color=0x0b9f3f)
             await interaction.response.send_message(embed=startedlog)
         else:
             faillog = discord.Embed(title="<:dsbbotFailed:953641818057216050> Process failed!", description="Something went wrong!", color=0xb89715)

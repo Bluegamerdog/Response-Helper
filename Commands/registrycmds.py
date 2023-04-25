@@ -24,7 +24,7 @@ class RegistryCmds(commands.GroupCog, group_name='registry'):
         if user == None or user == interaction.user:
             try:
                 if db_register_new(str(interaction.user), interaction.user.id, roblox_profile_link):
-                    embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Successfully registered!",description=f"`Username:` {interaction.user}\n`User ID:` {interaction.user.id}\n`Roblox Profile:` {roblox_profile_link}", color=discord.Color.green())
+                    embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Successfully registered!",description=f"`Username:` {interaction.user}\n`User ID:` {interaction.user.id}\n`Roblox Profile:` {roblox_profile_link}", color=discord.Color.green())
                 else:
                     embed = discord.Embed(title="<:dsbbotFailed:953641818057216050> Failed to register!", description=f"You are already in the database.\n*If you wish to update your data, use `/database update`.*", color=ErrorCOL)
             except Exception as e:
@@ -32,7 +32,7 @@ class RegistryCmds(commands.GroupCog, group_name='registry'):
         else:
             try:
                 if db_register_new(str(user), user.id, roblox_profile_link):
-                    embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Successfully registered {user}!",description=f"`Username:` {user}\n`User ID:` {user.id}\n`Roblox Profile:` {roblox_profile_link}", color=discord.Color.green())
+                    embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Successfully registered {user}!",description=f"`Username:` {user}\n`User ID:` {user.id}\n`Roblox Profile:` {roblox_profile_link}", color=discord.Color.green())
                 else:
                     embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to register!", description=f"User is already in the database.", color=ErrorCOL)
             except Exception as e:
@@ -61,7 +61,7 @@ class RegistryCmds(commands.GroupCog, group_name='registry'):
 
         await interaction.response.send_message(
             embed=discord.Embed(title=(
-                        f"<:dsbbotSuccess:953641647802056756> Successfully updated {target_user}!"
+                        f"<:trubotAccepted:1096225940578766968> Successfully updated {target_user}!"
                         if username_updated or profile_link_updated else
                         f"<:dsbbotFailed:953641818057216050> No change made to {target_user}!"), description=result, color=(discord.Color.green() if username_updated or profile_link_updated else ErrorCOL)))
          
@@ -71,7 +71,7 @@ class RegistryCmds(commands.GroupCog, group_name='registry'):
             return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Failed to remove user!", description="You must be a member of TRUCOMM or above to remove users from the user database.", color=ErrorCOL))
             
         result = db_register_remove_user(int(user_id))
-        embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Successfully removed user!" if result else f"<:dsbbotFailed:953641818057216050> Failed to removed user!", description=f"Deleted id: `{user_id}`" if result else f"`{user_id}` was not found in the database.", color=discord.Color.green() if result else ErrorCOL)
+        embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Successfully removed user!" if result else f"<:dsbbotFailed:953641818057216050> Failed to removed user!", description=f"Deleted id: `{user_id}`" if result else f"`{user_id}` was not found in the database.", color=discord.Color.green() if result else ErrorCOL)
         await interaction.response.send_message(embed=embed)
             
     @app_commands.command(name="view", description="This command is used to view data in the registry database.")
@@ -82,7 +82,7 @@ class RegistryCmds(commands.GroupCog, group_name='registry'):
             user = interaction.user
         result = db_register_get_data(user.id)
         if result:
-            embed = discord.Embed(title=f"<:dsbbotSuccess:953641647802056756> Data for {user}", description=f"`Username:` {result[0]}\n`User ID:` {result[1]}\n`Roblox Profile:` {result[2]}", color=discord.Color.green())
+            embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Data for {user}", description=f"`Username:` {result[0]}\n`User ID:` {result[1]}\n`Roblox Profile:` {result[2]}", color=discord.Color.green())
         else:
             embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> No data found!", description=f"No data was found for `{user}`.", color=ErrorCOL)
         await interaction.response.send_message(embed=embed)

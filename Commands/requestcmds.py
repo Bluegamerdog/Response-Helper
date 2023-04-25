@@ -1,14 +1,18 @@
 import math
 import re
 import discord
+import os
 from discord.ext import commands
 from discord import app_commands
 from discord import ui
 from Database_Functions.MaindbFunctions import *
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-from Functions.randFunctions import (attendance_points, co_host_points, supervisor_points, ringleader_points, getrank, get_quota, get_point_quota)
-from Database_Functions.UserdbFunction import (add_points, get_points, db_register_get_data, set_days_onloa)
+from Functions.randFunctions import (attendance_points, co_host_points, supervisor_points, ringleader_points)
+from Database_Functions.UserdbFunction import (add_points, get_points, db_register_get_data)
+import Database_Functions.PrismaFunctions as dbFuncs
+from Database_Functions.PrismaFunctions import *
+from Functions.formattingFunctions import embedBuilder
 
 ### REMOVE? ###
 
@@ -19,7 +23,7 @@ class PatrolrequestButtons(discord.ui.View):
         self.amount = amount
         discord.ui.View.timeout = None
     
-    @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", label="Accept", style=discord.ButtonStyle.grey)
+    @discord.ui.button(emoji="<:trubotAccepted:1096225940578766968>", label="Accept", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
         if not TRULEAD(interaction.user):
             return
@@ -27,10 +31,10 @@ class PatrolrequestButtons(discord.ui.View):
             try:
                 add_points(interaction.message.interaction.user.id, self.amount)
                 embed = interaction.message.embeds[0]
-                embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotAccept:1073668738827694131>")
+                embed.title= embed.title.replace("<:trubotBeingLookedInto:1099642414303559720>", "<:trubotAccepted:1096225940578766968>")
                 embed.color=DarkGreenCOL
                 await interaction.message.edit(embed=embed, view=None)
-                embed=discord.Embed(color=SuccessCOL,title="<:dsbbotAccept:1073668738827694131> Point Request Accepted!", description=f"Your point request has been **accepted** and {self.amount} points have been added. You now have **{get_points(interaction.message.interaction.user.id)}** points. 😎")
+                embed=discord.Embed(color=SuccessCOL,title="<:trubotAccepted:1096225940578766968> Point Request Accepted!", description=f"Your point request has been **accepted** and {self.amount} points have been added. You now have **{get_points(interaction.message.interaction.user.id)}** points. 😎")
                 embed.set_footer(icon_url=interaction.user.avatar, text=f"Reviewed by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
                 await interaction.response.send_message(f"{interaction.message.interaction.user.mention}", embed=embed)
             except Exception as e:
@@ -42,7 +46,7 @@ class PatrolrequestButtons(discord.ui.View):
             return
         else:
             embed = interaction.message.embeds[0]
-            embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotDeny:1073668785262833735>")
+            embed.title= embed.title.replace("<:trubotBeingLookedInto:1099642414303559720>", "<:dsbbotDeny:1073668785262833735>")
             embed.color=DarkRedCOL
             await interaction.message.edit(embed=embed, view=None)
             embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Point Request Denied!", description=f"Your point request has been **denied**. The person who reviewed it will provide you with the reason shortly. 😄")
@@ -67,7 +71,7 @@ class OperationrequestButtons(discord.ui.View):
         self.points_dict = points_dict
         discord.ui.View.timeout = None
     
-    @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", label="Accept", style=discord.ButtonStyle.grey)
+    @discord.ui.button(emoji="<:trubotAccepted:1096225940578766968>", label="Accept", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
         if not TRULEAD(interaction.user):
             return
@@ -76,10 +80,10 @@ class OperationrequestButtons(discord.ui.View):
                 for user_id, amount in self.points_dict.items():
                     add_points(user_id, amount)
                 embed = interaction.message.embeds[0]
-                embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotAccept:1073668738827694131>")
+                embed.title= embed.title.replace("<:trubotBeingLookedInto:1099642414303559720>", "<:trubotAccepted:1096225940578766968>")
                 embed.color=DarkGreenCOL
                 await interaction.message.edit(embed=embed, view=None)
-                embed=discord.Embed(color=SuccessCOL,title="<:dsbbotAccept:1073668738827694131> Point Request Accepted!", description=f"The point request for this operation has been **accepted** and all points have been added. 🛡️")
+                embed=discord.Embed(color=SuccessCOL,title="<:trubotAccepted:1096225940578766968> Point Request Accepted!", description=f"The point request for this operation has been **accepted** and all points have been added. 🛡️")
                 embed.set_footer(icon_url=interaction.user.avatar, text=f"Reviewed by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
                 await interaction.response.send_message(f"{interaction.message.interaction.user.mention}", embed=embed)
             except Exception as e:
@@ -91,7 +95,7 @@ class OperationrequestButtons(discord.ui.View):
             return
         else:
             embed = interaction.message.embeds[0]
-            embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotDeny:1073668785262833735>")
+            embed.title= embed.title.replace("<:trubotBeingLookedInto:1099642414303559720>", "<:dsbbotDeny:1073668785262833735>")
             embed.color=DarkRedCOL
             await interaction.message.edit(embed=embed, view=None)
             embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Point Request Denied!", description=f"The point request for this operation has been **denied**. The person who reviewed it will provide the reason shortly. 😄")
@@ -110,174 +114,51 @@ class OperationrequestButtons(discord.ui.View):
         else:
             return
 
-class ExcuseButtons(discord.ui.View):
-    def __init__(self, days:int, member:discord.Member):
-        super().__init__()
-        self.days = days
-        self.member = member
-        discord.ui.View.timeout = None
-    
-    @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", style=discord.ButtonStyle.grey)
-    async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not TRULEAD(interaction.user):
-            return
-        else:
-            data = db_register_get_data(self.member.id)
-            if data:
-                quota, rank = get_point_quota(self.member)
-                if quota == None:
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota found!", description=f"No quota was found for this operative."), ephemeral=True)
-                if set_days_onloa(self.member.id, self.days):
-                    updata = db_register_get_data(self.member.id)
-                    if updata[4] != None:
-                        quota_new = int(quota - ((quota/14)*updata[4]))
-                    else:
-                        quota_new = quota
-                embed = interaction.message.embeds[0]
-                embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotAccept:1073668738827694131>")
-                embed.color=DarkGreenCOL
-                await interaction.message.edit(embed=embed, view=None)
-            start_date, end_date, blocknumber = get_quota()
-            return await interaction.response.send_message(f"{self.member.mention}", embed = discord.Embed(color=SuccessCOL, title=f"<:dsbbotSuccess:953641647802056756> Excuse Request Accepted!", description=f'New quota: **{quota_new} Points** <t:{end_date}:R>\nDays excused: **{updata[4]}**' if updata[4] == None else f'New quota: **{quota_new} Points** <t:{end_date}:R>\nDays excused: **{updata[4]} days**'))
-
-    @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", style=discord.ButtonStyle.grey)
-    async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not TRULEAD(interaction.user):
-            return
-        else:
-            embed = interaction.message.embeds[0]
-            embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotDeny:1073668785262833735>")
-            embed.color=DarkRedCOL
-            await interaction.message.edit(embed=embed, view=None)
-            embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Block Excuse Request Denied!", description=f"Your block excuse request has been **denied**. The person who reviewed it will provide you with the reason shortly.")
-            embed.set_footer(icon_url=interaction.user.avatar, text=f"Reviewed by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
-            await interaction.response.send_message(f"{interaction.message.interaction.user.mention}", embed=embed)
         
-    @discord.ui.button(emoji="❌", style=discord.ButtonStyle.grey)
-    async def CancelButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if interaction.user == interaction.message.interaction.user:
-            await interaction.message.delete()
-        else:
-            return
-
-        
-class LoAButtons(discord.ui.View):
-    def __init__(self):
+class medalButtons(discord.ui.View):
+    def __init__(self, requested_medal:discord.Role, serverconfigs):
         super().__init__()
         discord.ui.View.timeout = None
+        self.requested_medal = requested_medal
+        self.serverconfigs = serverconfigs
     
-    @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", style=discord.ButtonStyle.grey)
+    @discord.ui.button(emoji="<:trubotAccepted:1096225940578766968>", label="Accept", style=discord.ButtonStyle.grey)
     async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not TRULEAD(interaction.user):
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(self.serverconfigs.commandRole))):
             return
         else:
             try:
-                member = interaction.guild.get_member(interaction.message.interaction.user.id)
-                role = discord.utils.get(interaction.message.guild.roles, name="TRU Leave of Absence")
-                await member.add_roles(role)
+                await interaction.message.interaction.user.add_roles(self.requested_medal)
                 embed = interaction.message.embeds[0]
-                embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotAccept:1073668738827694131>")
+                embed.title= embed.title.replace("<:trubotBeingLookedInto:1099642414303559720>", "<:trubotAccepted:1096225940578766968> Accepted")
+                embed.color = SuccessCOL
                 embed.set_footer(text=f"Accepted by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
-                await interaction.message.interaction.user.send(f"Hello!\nYour LoA has been accepted by {interaction.user.display_name}. Enjoy your break! <:dsbbotThumbsUp:1085957344971722852>")
-                await interaction.message.edit(embed=embed, view=LoAEnd(loAID1=interaction.message.id))
+                await interaction.message.edit(embed=embed, view=None)
                 await interaction.response.defer()
             except Exception as e:
                 await interaction.response.send_message(f"{e}", ephemeral=True)
 
-    @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", style=discord.ButtonStyle.grey)
+    @discord.ui.button(emoji="<:trubotDenied:1099642433588965447>", label="Deny", style=discord.ButtonStyle.grey)
     async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if not TRULEAD(interaction.user):
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(self.serverconfigs.commandRole))):
             return
         else:
             try:
                 embed = interaction.message.embeds[0]
-                embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotDeny:1073668785262833735>")
+                embed.title= embed.title.replace("<:trubotBeingLookedInto:1099642414303559720>", "<:trubotDenied:1099642433588965447> Denied")
+                embed.color = DarkRedCOL
                 embed.set_footer(text=f"Denied by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
                 await interaction.message.edit(embed=embed, view=None)
                 await interaction.response.defer()
             except Exception as e:
                 await interaction.response.send_message(f"{e}", ephemeral=True)
         
-    @discord.ui.button(emoji="❌", style=discord.ButtonStyle.grey)
+    @discord.ui.button(emoji="❌", label="Cancel", style=discord.ButtonStyle.grey)
     async def CancelButton(self, interaction:discord.Interaction, button:discord.ui.Button):
         if interaction.user == interaction.message.interaction.user:
             await interaction.message.delete()
         else:
             return
-        
-class LoAAck(discord.ui.View):
-    def __init__(self, loAID2:int, member:discord.Member):
-        super().__init__()
-        self.loaID2 = loAID2
-        self.member = member
-        discord.ui.View.timeout = None
-    
-    @discord.ui.button(emoji="👍", style=discord.ButtonStyle.grey)
-    async def AckButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        if TRULEAD(interaction.user):
-            role = discord.utils.get(interaction.message.guild.roles, name="TRU Leave of Absence")
-            await self.member.remove_roles(role)            
-            loamsgg = await interaction.channel.fetch_message(self.loaID2)
-            loamsg = loamsgg.embeds[0]
-            loamsg.title = loamsg.title.replace("<:dsbbotAccept:1073668738827694131>", "<:dsbbotDisabled2:1067970678608908288>")
-            await loamsgg.edit(embed=loamsg, view=None)
-            await interaction.message.edit(view=None)
-            await interaction.response.send_message(f"{self.member.mention}, your LoA ending has been acknowledged! Your new quota is `TBA`")
-        else:
-            return
-
-class LoAEnd(discord.ui.View):
-    def __init__(self, loAID1):
-        super().__init__()
-        self.loaID1 = loAID1
-        discord.ui.View.timeout = None
-    
-    
-    
-    @discord.ui.button(emoji="<:EndLoA:1067972498165071993>", label="End",style=discord.ButtonStyle.grey)
-    async def LoAEnd(self, interaction:discord.Interaction, button:discord.ui.Button):
-        member = interaction.guild.get_member(interaction.message.interaction.user.id)
-        if TRULEAD(interaction.user):
-            role = discord.utils.get(interaction.message.guild.roles, name="TRU Leave of Absence")
-            await member.remove_roles(role)
-            embed = interaction.message.embeds[0]
-            embed.title= embed.title.replace("<:dsbbotAccept:1073668738827694131>", "<:dsbbotDisabled2:1067970678608908288>")
-            await interaction.response.send_message(f"{interaction.message.interaction.user.mention}, your LoA has ended! Your new quota is `TBA`")
-            await interaction.message.edit(embed = embed, view=None)
-        elif interaction.user == interaction.message.interaction.user:
-            #print(self.loaID1)
-            await interaction.response.send_message(f"{interaction.user.mention} is ready to end their LoA!", view=LoAAck(loAID2=self.loaID1, member=member))
-            await interaction.followup.send("Please wait for a member of TRU PreComm+ to acknowledge your new request.", ephemeral=True)
-        else:
-            return
-
-
-
-class ExcuseModal(ui.Modal, title="Block Excuse Request"):
-    days = ui.TextInput(label='How many days?', placeholder="Please only enter digits. Must be in between 3 and 14 days.", max_length=2, required=True)
-    reason = ui.TextInput(label='Reason?', style=discord.TextStyle.paragraph, required=True)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        quota = get_quota()
-        if int(self.days.value) > 14 or (int(self.days.value) < 3):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Invalud length!", description=f"You cannot be excused for less than 3 or more than 14 days. If you need to take a longer excuse, please file a regular Leave of Absence."), ephemeral=True)
-        embed=discord.Embed(title=f"<:dsbbotUnderReview:953642762857771138> Block {quota[2]} Excuse Request", color=TRUCommandCOL)
-        embed.add_field(name="", value=f"**Rank and User:** {interaction.user.display_name}", inline=False)
-        embed.add_field(name="", value=f"**Requested length:** {self.days} days" if int(self.days.value) > 1 else f"**Requested length:** {self.days} day", inline=False)
-        embed.add_field(name="", value=f"**Reason:** ||{self.reason}||", inline=False)
-        await interaction.response.send_message(embed=embed, view=ExcuseButtons(int(self.days.value), interaction.user))
-        
-class LoAModal(ui.Modal, title="Leave of Absence Request"):
-    dep = ui.TextInput(label='Date of departure?', placeholder="Either MM/DD/YYYY or DD.MM.YYYY", required=True)
-    ret = ui.TextInput(label='Date of return?', placeholder="Either MM/DD/YYYY or DD.MM.YYYY", required=True)
-    reason = ui.TextInput(label='Reason?', style=discord.TextStyle.paragraph, required=True)
-    
-
-    async def on_submit(self, interaction: discord.Interaction):
-        rank = getrank(interaction.user)
-        embed=discord.Embed(title="<:dsbbotUnderReview:953642762857771138> Leave of Absence Request", color=TRUCommandCOL)
-        embed.add_field(name="", value=f"**Username:** {interaction.user.display_name}\n**Rank:** {rank[0]}\n**Date departing:** {self.dep}\n**Date returning:** {self.ret}\n**Reason:** ||{self.reason}||", inline=False)
-        await interaction.response.send_message(embed=embed, view=LoAButtons())
 
 class RequestCmds(commands.GroupCog, group_name='request'):
     def __init__(self, bot: commands.Bot):
@@ -303,7 +184,7 @@ class RequestCmds(commands.GroupCog, group_name='request'):
                 amount = 2
                 extra = math.floor((length - 60+7) / 30)
                 amount += extra
-        embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotUnderReview:953642762857771138> __Patrol__ Point Request - {interaction.user.display_name}")
+        embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotBeingLookedInto:1099642414303559720> __Patrol__ Point Request - {interaction.user.display_name}")
         embed.add_field(name="", value="")
         embed.add_field(name="", value=f"**{interaction.user.display_name}** has requested **{amount} points** for patrolling **{length} minutes**.\n\n→ **[Log Message]({log})**", inline=False)
         await interaction.response.send_message(embed = embed, view=PatrolrequestButtons(amount))
@@ -315,7 +196,7 @@ class RequestCmds(commands.GroupCog, group_name='request'):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description=f"This command is limited to TRU Sergeant+."), ephemeral=True)
         if not db_register_get_data(interaction.user.id):
             return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Interaction failed!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL), ephemeral=True)   
-        embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotUnderReview:953642762857771138> __Operation__ Points Request - Operation {operation}")
+        embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotBeingLookedInto:1099642414303559720> __Operation__ Points Request - Operation {operation}")
         points_dict = {}
         
         if co_hosts:
@@ -432,17 +313,33 @@ class RequestCmds(commands.GroupCog, group_name='request'):
             embed.add_field(name="", value=f"`Attendee:` {atttxt}"if attendees_list.__len__() == 1 else f"`Attendees:` {atttxt}", inline=False)
         await interaction.response.send_message(embed = embed, view=OperationrequestButtons(points_dict))
         
-    @app_commands.command(name="excuse", description="Request to be excused for a few days for the current block.")
-    @app_commands.choices(type=[
-        #app_commands.Choice(name="Leave of Absence", value="LoA"),
-        app_commands.Choice(name="Block excuse", value="ExC"),
-    ])
-    async def request_ex(self, interaction: discord.Interaction, type:app_commands.Choice[str]):
-        if not TRUMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
-        if not db_register_get_data(interaction.user.id):
-            return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Interaction failed!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL), ephemeral=True)  
-        #if type.value == "LoA":    
-        #    await interaction.response.send_modal(LoAModal())
-        if type.value == "ExC":
-            await interaction.response.send_modal(ExcuseModal())
+    @app_commands.command(name="medal", description="Request a medal within TRU.")
+    @app_commands.describe(medal="Which medal are you requesting?", evidence_link="You only need to fill one evidence prompt! This one is for links.", evidence_file="You only need to fill one evidence prompt! This one is for links.", completion_date="When did you take the evidence? [MM/DD/YYYY or DD.MM/YYYY]")
+    @app_commands.choices(medal=[
+        app_commands.Choice(name="Rapid Multikill", value="Rapid Multikill"),
+        app_commands.Choice(name="Duo Defense", value="Duo Defense"),
+        app_commands.Choice(name="Swift Sweep", value="Swift Sweep"),
+        app_commands.Choice(name="Key Guardian", value="Key Guardian"),
+        app_commands.Choice(name="Glass Electrician", value="Glass Electrician"),
+        app_commands.Choice(name="Cavern Champion", value="Cavern Champion")])
+    async def request_ex(self, interaction: discord.Interaction, medal:app_commands.Choice[str],completion_date:str ,evidence_link:str=None, evidence_file:discord.Attachment=None):
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:trubotDenied:1099642433588965447> Missing permissions!", description=f"Only TRU Operators or above may request medals."), ephemeral=True)
+        else:
+            requested_role:discord.Role = discord.utils.get(interaction.guild.roles, name=f"{medal.value}")
+            request_embed = discord.Embed(title="<:trubotBeingLookedInto:1099642414303559720> Medal Request", description=f"**{interaction.user.nick}** is requesting the {requested_role.mention} medal.", color=discord.Color.dark_theme())
+            request_embed.add_field(name="Date of completion", value=completion_date)
+            if evidence_file:
+                filename = evidence_file.filename
+                _, extension = os.path.splitext(filename)
+                if extension not in ['.mp4', '.mov', '.avi']:
+                    return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Invalid file type!", description="Only MP4, MOV, and AVI files are accepted as evidence.", color=ErrorCOL), ephemeral=True)
+                request_embed.add_field(name="Evidence", value=f"[File download link]({evidence_file.url})")
+            elif evidence_link:
+                if len(evidence_link) > 30:
+                    evidence_link = f"[LONGASS Link]({evidence_link})"
+                request_embed.add_field(name="Evidence", value=evidence_link)
+            else:
+                return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> No evidence found!", description="You need to fill out one of the two evidence prompts. Either in form of a link or a file.", color=ErrorCOL), ephemeral=True)
+            return await interaction.response.send_message(embed=request_embed, view=medalButtons(requested_role, serverConfig))

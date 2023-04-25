@@ -34,7 +34,7 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
             return
         if(type(amount)==int and int(amount) >= 1):
             if add_points(member.id, amount) == True: # add points to the user
-                    embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully added {amount} point to **{member.display_name}**!" if amount == 1 else f"<:dsbbotSuccess:953641647802056756> Successfully added {amount} points to **{member.display_name}**!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
+                    embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully added {amount} point to **{member.display_name}**!" if amount == 1 else f"<:trubotAccepted:1096225940578766968> Successfully added {amount} points to **{member.display_name}**!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
             else:
                 embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to add points to `{member}`!", description="User not found in registry database.", color=ErrorCOL)
             await interaction.response.send_message(embed=embed)
@@ -48,7 +48,7 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to remove points from user!", description=f"You must be a member of TRUPC or above to remove points."))
         if(type(amount)==int and int(amount)>=1):
             if remove_points(member.id, amount) == True: #removes points from user
-                embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully removed {amount} point from **{member.display_name}**!" if amount == 1 else f"<:dsbbotSuccess:953641647802056756> Successfully removed {amount} points from {member.display_name}!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
+                embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully removed {amount} point from **{member.display_name}**!" if amount == 1 else f"<:trubotAccepted:1096225940578766968> Successfully removed {amount} points from {member.display_name}!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
             else:
                 embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to remove points from `{member}`!", description="User not found in registry database.", color=ErrorCOL)
             await interaction.response.send_message(embed=embed)
@@ -61,14 +61,14 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
         if not TRUMEMBER(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
         else:
-            embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Point data found for {user.display_name}!" if user and user != interaction.user else f"<:dsbbotSuccess:953641647802056756> Point data found!")
+            embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Point data found for {user.display_name}!" if user and user != interaction.user else f"<:trubotAccepted:1096225940578766968> Point data found!")
             if user == None:
                 user = interaction.user
             points = get_points(user.id)
             if points is False:
                 return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> No point data found for `{user}`!", description="User not found in registry database.", color=ErrorCOL))
             username = str(user.display_name)
-            embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotSuccess:953641647802056756> Point data for {username}!")
+            embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Point data for {username}!")
             data = db_register_get_data(user.id)
             quota, rank = get_point_quota(user, data)
             if quota:
@@ -93,14 +93,14 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
             return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to reset points!", description="You must be a member of TRUCOMM or above to purge the registry database.", color=ErrorCOL))
         else:
             await interaction.response.send_message(embed=discord.Embed(description="<:dsbbotUnderReview:1067970676041982053> Waiting for response..."))
-            embed = discord.Embed(color=HRCommandsCOL, description=f"<:dsbbotUnderReview:1067970676041982053> **Are you sure you want to reset the points?**\nReact with <:dsbbotApproved:953642750039953418> to confirm.", colour=ErrorCOL)
+            embed = discord.Embed(color=HRCommandsCOL, description=f"<:dsbbotUnderReview:1067970676041982053> **Are you sure you want to reset the points?**\nReact with <:trubotApproved:1099642447526637670> to confirm.", colour=ErrorCOL)
             msg = await interaction.edit_original_response(embed=embed)
-            await msg.add_reaction("<:dsbbotApproved:953642750039953418>")
+            await msg.add_reaction("<:trubotApproved:1099642447526637670>")
             
             
             # Wait for the user's reaction
             def check(reaction, user):
-                return user == interaction.user and str(reaction.emoji) == '<:dsbbotApproved:953642750039953418>'
+                return user == interaction.user and str(reaction.emoji) == '<:trubotApproved:1099642447526637670>'
             try:
                 reaction, user_r = await self.bot.wait_for('reaction_add', check=check, timeout=10)
             except asyncio.TimeoutError:
@@ -113,7 +113,7 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
                     success = await reset_points()
                     print("Points successfully reset!")
                     if success:
-                        embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Point reset successful!", color=discord.Color.green())
+                        embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Point reset successful!", color=discord.Color.green())
                         await interaction.edit_original_response(embed=embed)
                     else:
                         embed = discord.Embed(title="<:dsbbotFailed:953641818057216050> Point reset failed!", description=f"Something went wrong...", color=ErrorCOL)
@@ -139,7 +139,7 @@ class mypointsCmd(commands.Cog):
             if data == None:
                 return await interaction.response.send_message(embed=embedBuilder("Error", embedDesc=f"Unable to find userdata on {member.mention}. Maybe they aren't registered?", embedTitle="No data found!"))
             else:
-                embed = embedBuilder("Success", embedTitle=f"<:dsbbotSuccess:953641647802056756> User data found!", embedDesc=f"Displaying {interaction.user.mention}'s data for block `TBA`.")
+                embed = embedBuilder("Success", embedTitle=f"<:trubotAccepted:1096225940578766968> User data found!", embedDesc=f"Displaying {interaction.user.mention}'s data for block `TBA`.")
                 embed.add_field(name="TRU Rank", value=f"> {data.rank}", inline=True)
                 embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if onLoA(member) else f"> Activty Duty", inline=True)
                 embed.add_field(name="", value="", inline=False) # Filler for 2x2 field config because discord
