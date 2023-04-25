@@ -1,5 +1,6 @@
 import discord
 import requests
+import subprocess
 
 BasiccommandCOL = 0xFFFFFF
 TRUCommandCOL = 0x8e0000
@@ -10,6 +11,13 @@ SuccessCOL = 0x4BB543
 DarkGreenCOL = 0x006400
 YellowCOL = 0xb89715
 
+
+
+
+
+
+def get_git_revision_short_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
 
     match embedType:
@@ -19,7 +27,7 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
                 description=embedDesc,
                 color=ErrorCOL
             )
-            embed.set_footer(text="TRU Helper In-Dev")
+            embed.set_footer(text="TRU Helper In-Dev Ver: " + get_git_revision_short_hash())
             #embed.set_footer(response.json()["name"])
             return embed
 
@@ -31,7 +39,7 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
             )
             #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
             #embed.set_footer(response.json()["name"])
-            embed.set_footer(text="TRU Helper In-Dev")
+            embed.set_footer(text="TRU Helper In-Dev Ver: " + get_git_revision_short_hash())
             return embed
 
         case "Warning":
@@ -42,7 +50,7 @@ def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
             )
             #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
             #embed.set_footer(response.json()["name"])
-            embed.set_footer(text="TRU Helper In-Dev")
+            embed.set_footer(text="TRU Helper In-Dev Ver: " + get_git_revision_short_hash())
             return embed
         case other:
             print("No valid Embed Type passed.")

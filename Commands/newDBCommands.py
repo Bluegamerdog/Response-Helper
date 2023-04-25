@@ -32,13 +32,44 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
 
+
+    @app_commands.command(name="endlog", description="End your current log.")
+    async def endlog(self, interaction):
+        serverConfig = await fetch_config(interaction)
+        op, opResponse = await fetch_operative(interaction)
+        print(op)
+        print(opResponse)
+        if not opResponse:
+            errEmbed = embedBuilder("Error", embedTitle="Operative not found!",
+                                    embedDesc="Please make sure you are regsitered with the TRU bot before running commands!")
+            await interaction.response.send_message(embed=errEmbed)
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+            date_time = datetime.datetime.now()
+            unixTime = int(time.mktime(date_time.timetuple()))
+            dbMessage, dbSuccess = await prismaEndLog(interaction, str(unixTime))
+            if dbSuccess:
+                successEmbed = embedBuilder("Success", embedTitle="Log ended successfully!", embedDesc="A log with the following details below was ended.")
+                successEmbed.add_field(name="Time ended: ", value= "<:t" + str(unixTime) + ":f>")
+                successEmbed.add_field(name="Log Time: ", value= str(dbMessage) + " minutes")
+                await interaction.response.send_message(embed=successEmbed)
+            else:
+                errorEmbed = embedBuilder("Error", embedTitle="Unable to end log.", embedDesc="Reason: " + str(dbMessage))
+                await interaction.response.send_message(embed=errorEmbed)
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+
+
+
+
     @app_commands.command(name="register", description="Register in the DB")
     async def register(self, interaction: discord.Interaction, profilelink: str):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, interaction.user.nick)
             if dbResponse:
-                successEmbed = embedBuilder("Successfully Registered", embedTitle="Success!",
+                successEmbed = embedBuilder("Success", embedTitle="Success!",
                                             embedDesc="An operative with the following details was created: ")
                 operativeName = interaction.user.nick.split()
                 operativeName = operativeName[len(operativeName) - 1]
