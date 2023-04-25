@@ -28,32 +28,68 @@ import time
 # Gave up and decided to rewrite it myself, command uses profile link and then discovers the rest on it's own
 
 # Need group role IDs to complete setup here, as of now it works manually
-class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
+
+
+class SealDBCommands(commands.GroupCog, group_name='sealtest'):
     def __init__(self, bot: commands.bot):
         self.bot = bot
 
 
+    @app_commands.command(name="cancellog", description="Cancel current log.")
+    async def cancellog(self, interaction: discord.Interaction):
+        serverConfig = await fetch_config(interaction)
+        if not checkPermission(interaction.user.top_role, serverConfig.logPermissionRole):
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+            return
+        op, opResponse = await fetch_operative(interaction)
+        log, logResponse = await checkLog(interaction)
+        if not opResponse:
+            errEmbed = embedBuilder("Error", embedTitle="Operative not found!",
+                                    embedDesc="Please make sure you are regsitered with the TRU bot before running commands!")
+            await interaction.response.send_message(embed=errEmbed)
+        if not logResponse:
+            errEmbed = embedBuilder("Error", embedTitle="Log not found!",
+                                    embedDesc="No active log was found under your operative id.")
+            await interaction.response.send_message(embed=errEmbed)
+        if logResponse:
+            print("Found a log")
+            await prismaCancelLog(interaction)
+            successEmbed = embedBuilder("Error", embedTitle="Log cancelled.",
+                                        embedDesc="A log with the following details below was cancelled.")
+            successEmbed.add_field(name="Log ID: ", value=str(log.logID))
+            successEmbed.add_field(name="Log start time: ", value="<t:" + str(log.timeStarted) + ":f>")
+            await interaction.response.send_message(embed=successEmbed)
+
+
     @app_commands.command(name="endlog", description="End your current log.")
-    async def endlog(self, interaction):
+    async def endlog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction)
         op, opResponse = await fetch_operative(interaction)
+        if not checkPermission(interaction.user.top_role, serverConfig.logPermissionRole):
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+            return
         print(op)
         print(opResponse)
         if not opResponse:
             errEmbed = embedBuilder("Error", embedTitle="Operative not found!",
                                     embedDesc="Please make sure you are regsitered with the TRU bot before running commands!")
             await interaction.response.send_message(embed=errEmbed)
+            return
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             date_time = datetime.datetime.now()
             unixTime = int(time.mktime(date_time.timetuple()))
             dbMessage, dbSuccess = await prismaEndLog(interaction, str(unixTime))
             if dbSuccess:
                 successEmbed = embedBuilder("Success", embedTitle="Log ended successfully!", embedDesc="A log with the following details below was ended.")
-                successEmbed.add_field(name="Time ended: ", value= "<:t" + str(unixTime) + ":f>")
+                successEmbed.add_field(name="Time ended: ", value= "<t:" + str(unixTime) + ":f>")
                 successEmbed.add_field(name="Log Time: ", value= str(dbMessage) + " minutes")
                 await interaction.response.send_message(embed=successEmbed)
             else:
-                errorEmbed = embedBuilder("Error", embedTitle="Unable to end log.", embedDesc="Reason: " + str(dbMessage))
+                errorEmbed = embedBuilder("Error", embedTitle="Unable to end log:", embedDesc="**Reason:** " + str(dbMessage))
                 await interaction.response.send_message(embed=errorEmbed)
         else:
             errEmbed = embedBuilder("Error", embedTitle="Permission error:",
@@ -67,12 +103,13 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def register(self, interaction: discord.Interaction, profilelink: str):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, interaction.user.nick)
+            operativeName_list = list(interaction.user.nick.split(" "))
+            operativeName = operativeName_list[len(operativeName_list) - 1]
+            dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, operativeName)
             if dbResponse:
                 successEmbed = embedBuilder("Success", embedTitle="Success!",
                                             embedDesc="An operative with the following details was created: ")
-                operativeName = interaction.user.nick.split()
-                operativeName = operativeName[len(operativeName) - 1]
+
                 successEmbed.add_field(name="Operative name: ", value=operativeName)
                 successEmbed.add_field(name="Operative profile link: ", value=profilelink)
                 successEmbed.add_field(name="Operative rank: ", value=str(interaction.user.top_role.name))
@@ -184,42 +221,49 @@ class SealDBCommands(commands.GroupCog, group_name='trudbtesting'):
     async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
                            announce_channel: discord.TextChannel, command_role: discord.Role,
                            developer_role: discord.Role, ping_role: discord.Role):
-        db = Prisma()
-        await db.connect()
-        await db.operative.f
-        await db.server.upsert(where={
-            'serverID': str(interaction.guild.id)
-        },
-            data={
-                'create': {
-                    'serverID': str(interaction.guild.id),
-                    'announceRole': str(ping_role.id),
-                    'announceChannel': str(announce_channel.id),
-                    'logPermissionRole': str(logrole.id),
-                    'announcePermissionRole': str(schedule_role.id),
-                    'commandRole': str(command_role.id),
-                    'developerRole': str(developer_role.id)
-                }, 'update': {
-                    'announceRole': str(ping_role.id),
-                    'announceChannel': str(announce_channel.id),
-                    'logPermissionRole': str(logrole.id),
-                    'announcePermissionRole': str(schedule_role.id),
-                    'commandRole': str(command_role.id),
-                    'developerRole': str(developer_role.id)
-                }
+        requiredRole = interaction.guild.get_role(1095826407894024192)
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(1095826407894024192)):
 
-            })
-        await db.disconnect()
+            db = Prisma()
+            await db.connect()
+            #await db.operative.f
+            await db.server.upsert(where={
+                'serverID': str(interaction.guild.id)
+            },
+                data={
+                    'create': {
+                        'serverID': str(interaction.guild.id),
+                        'announceRole': str(ping_role.id),
+                        'announceChannel': str(announce_channel.id),
+                        'logPermissionRole': str(logrole.id),
+                        'announcePermissionRole': str(schedule_role.id),
+                        'commandRole': str(command_role.id),
+                        'developerRole': str(developer_role.id)
+                    }, 'update': {
+                        'announceRole': str(ping_role.id),
+                        'announceChannel': str(announce_channel.id),
+                        'logPermissionRole': str(logrole.id),
+                        'announcePermissionRole': str(schedule_role.id),
+                        'commandRole': str(command_role.id),
+                        'developerRole': str(developer_role.id)
+                    }
 
-        embed = embedBuilder(embedType="Success", embedTitle="Success!",
-                             embedDesc="A configuration with the following details was made: ")
-        embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
-        embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
-        embed.add_field(name="Response Leaders: ", value="<@&" + str(schedule_role.id) + ">")
-        embed.add_field(name="Response announcements channel: ", value="<#" + str(announce_channel.id) + ">")
-        embed.add_field(name="TRU Leadership role: ", value="<@&" + str(command_role.id) + ">")
-        embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+                })
+            await db.disconnect()
+
+            embed = embedBuilder(embedType="Success", embedTitle="Success!",
+                                 embedDesc="A configuration with the following details was made: ")
+            embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
+            embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
+            embed.add_field(name="Response Leaders: ", value="<@&" + str(schedule_role.id) + ">")
+            embed.add_field(name="Response announcements channel: ", value="<#" + str(announce_channel.id) + ">")
+            embed.add_field(name="TRU Leadership role: ", value="<@&" + str(command_role.id) + ">")
+            embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
+            await interaction.response.send_message(embed=embed, ephemeral=False)
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+            await interaction.response.send_message(embed=errEmbed)
 
 
 
