@@ -14,7 +14,7 @@ from discord import app_commands
 from discord.ext import commands
 
 
-from Database_Functions.MaindbFunctions import *
+
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import *
@@ -32,7 +32,6 @@ from Commands.testingcmds import testingCmds
 
 bot = commands.Bot(command_prefix=">", intents=discord.Intents().all())
 tree = app_commands.CommandTree(discord.Client(intents=discord.Intents().all()))
-blockdata = get_quota()
 start_time = datetime.now()
 @bot.event  
 async def on_ready():
@@ -67,15 +66,7 @@ async def on_ready():
         print(f"Error syncing commands: {e}")
         synced = []
     # Quota and notes output
-    quota = False
-    notes = False
-    if blockdata:
-        print(prfx + f"|| Quota block {blockdata[0]} set.")
-        quota = True
-        notes = True
-    else:
-        print(prfx + f"|| Quota data: No Active quota block set.")
-        notes = True
+    print(prfx + f"|| That is all for now. (Remove quota blocks for now)")
     
     # Embed message
     embed = discord.Embed(title="Bot Startup Info • InDev", color=discord.Color.green())
@@ -83,14 +74,7 @@ async def on_ready():
     embed.add_field(name="Bot ID", value=bot.user.id, inline=True)
     embed.add_field(name="Runtime Information", value=f"Discord Version: {discord.__version__} || Python Version: {platform.python_version()}", inline=False)
     embed.add_field(name="Synced Slash Commands", value=len(synced), inline=False)
-    
-    if quota:
-        embed.add_field(name="Quota status", value=f"Quota block {blockdata[0]} set", inline=False)
-    else:
-        embed.add_field(name="Quota status", value="No Active quota block set.", inline=False)
-    
-    if not notes:
-        embed.add_field(name="Notes", value="N/A", inline=False)
+    embed.add_field(name="Notes", value="That is all for now. (Remove quota blocks for now).", inline=False)
     
     channel = bot.get_channel(1096146385830690866)  # Startup-channel ID
     await channel.send(embed=embed)

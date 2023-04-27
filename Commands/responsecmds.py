@@ -7,17 +7,19 @@ import discord
 
 import time
 import asyncio
-from Database_Functions.MaindbFunctions import *
+
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Functions.randFunctions import *
 from Functions.trelloFunctions import *
-from Database_Functions.ResponsedbFunctions import *
+from Database_Functions.responsedbFunctions import *
 from Database_Functions.UserdbFunction import *
 import Database_Functions.PrismaFunctions as dbFuncs
 from Database_Functions.PrismaFunctions import *
 from Functions.formattingFunctions import embedBuilder
 
+## Groundwork is compete ##
+# A lot of polishing, compacting and error handling still needed but functionally everything works
 
 class ResponseAnnouncementButtons(discord.ui.View):
     def __init__(self, embed:discord.Embed, channel:discord.TextChannel, res_type, start_time, fist_int:discord.Interaction):

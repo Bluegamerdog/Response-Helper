@@ -4,7 +4,7 @@ import math
 from discord.ext import commands
 from discord import app_commands
 import datetime
-from Database_Functions.MaindbFunctions import *
+
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import 
@@ -13,6 +13,7 @@ from Functions.trelloFunctions import (create_response_card, get_members, get_me
 
 truAccept = discord.PartialEmoji(name="trubotAccepted", id=1096225940578766968)
 
+# Just to test random shit
 
 class testingCmds(commands.Cog):
     def __init__(self, bot: commands.Bot):

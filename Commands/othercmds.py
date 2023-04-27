@@ -3,7 +3,7 @@ import asyncio
 import random
 from discord.ext import commands
 from discord import app_commands
-from Database_Functions.MaindbFunctions import *
+
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Functions.randFunctions import *

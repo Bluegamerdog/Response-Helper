@@ -1,6 +1,10 @@
 import os
 import sqlite3
 
+
+## Also still refernce for now but no purpose
+
+
 def userget_conn():
     db_path = os.path.join('Databases', 'user_database.db')
     conn = sqlite3.connect(db_path)

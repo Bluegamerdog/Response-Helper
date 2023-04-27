@@ -7,7 +7,7 @@ from Functions import permFunctions
 from Functions.formattingFunctions import embedBuilder
 from discord.ext import commands
 from discord import app_commands
-from Database_Functions.MaindbFunctions import *
+
 import Database_Functions.PrismaFunctions as DBFunc
 from Database_Functions.UserdbFunction import *
 from Functions.mainVariables import *

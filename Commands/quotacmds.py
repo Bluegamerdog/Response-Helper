@@ -3,7 +3,7 @@ import discord
 from prisma import Prisma
 from discord.ext import commands
 from discord import app_commands
-from Database_Functions.MaindbFunctions import *
+
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Functions.randFunctions import (get_point_quota, quota_prog_display)
