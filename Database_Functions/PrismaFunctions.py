@@ -4,6 +4,8 @@ import discord
 import asyncio
 import urllib3
 import uuid
+import time
+import random
 
 """
 Prisma Template 
@@ -17,6 +19,7 @@ async def prismaFunc():
 
 """
 
+# Need to start moving these into their own files (pls)
 
 async def updateUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
     try:
@@ -36,7 +39,7 @@ async def updateUser(interaction: discord.Interaction, discordID: int, profileLi
         return True
     except Exception as e:
         return e
-
+ 
 
 async def registerUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
     try:
@@ -254,3 +257,7 @@ async def findRole(discordRole: discord.role):
 
     except Exception as e:
         return e
+    
+    
+
+

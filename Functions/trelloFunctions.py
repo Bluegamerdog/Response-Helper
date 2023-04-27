@@ -55,7 +55,7 @@ def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
     label = trello.get_label(label_id, boardid)
     newCard.add_label(label)
         
-    return newCard.short_url
+    return newCard
 
 def set_card_completed(card_url:str):
     card_id = card_url.split('/')[-1]
@@ -69,3 +69,31 @@ def get_member(id):
     member = trello.get_member(id)
     return member.username, member.full_name
 
+def get_trello_card(card_id):
+
+    card = trello.get_card(card_id)
+
+    return card
+
+def add_cancelled_label(card_id):
+    try:
+        trello_card = trello.get_card(card_id)
+        '''
+        try:
+            SPONLabel = trello.get_label("6437e2974720c87ca4fe3e98", boardid) #SPON
+            trello_card.remove_label(SPONLabel)
+        except Exception:
+            pass
+        
+        try:
+            SCHEDLabel = trello.get_label('6437eb47965e94c2c8cb2eb3', boardid)
+            trello_card.remove_label(SCHEDLabel)
+        except Exception:
+            pass
+        '''    
+        cancelled_label = trello.get_label('6437e432cdf097cffdc2fda1', boardid)
+        trello_card.add_label(cancelled_label)
+        return True
+    except Exception as e:
+        print(e)
+        return False

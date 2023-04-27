@@ -7,7 +7,7 @@ from Functions import permFunctions
 from Functions.formattingFunctions import embedBuilder
 from discord.ext import commands
 from discord import app_commands
-from Database_Functions.MaindbFunctions import *
+
 import Database_Functions.PrismaFunctions as DBFunc
 from Database_Functions.UserdbFunction import *
 from Functions.mainVariables import *
@@ -107,9 +107,15 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
             operativeName = operativeName_list[len(operativeName_list) - 1]
             dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, operativeName)
             if dbResponse:
+<<<<<<< HEAD
+                successEmbed = embedBuilder("Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully Registered!",
+                                            embedDesc="An operative with the following details was created: ")
+                operativeName = interaction.user.nick.split()[-1]
+=======
                 successEmbed = embedBuilder("Success", embedTitle="Success!",
                                             embedDesc="An operative with the following details was created: ")
 
+>>>>>>> master
                 successEmbed.add_field(name="Operative name: ", value=operativeName)
                 successEmbed.add_field(name="Operative profile link: ", value=profilelink)
                 successEmbed.add_field(name="Operative rank: ", value=str(interaction.user.top_role.name))
@@ -162,7 +168,6 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
                        robloxid: int):
         try:
             serverConfig = await dbFuncs.fetch_config(interaction=interaction)
-            print(serverConfig)
             requiredRole = interaction.guild.get_role(int(serverConfig.commandRole))
             if permFunctions.checkPermission(interaction.user.top_role, requiredRole):
                 try:
@@ -221,8 +226,34 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
     async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
                            announce_channel: discord.TextChannel, command_role: discord.Role,
                            developer_role: discord.Role, ping_role: discord.Role):
+<<<<<<< HEAD
+        db = Prisma()
+        await db.connect()
+        #await db.operative.
+        await db.server.upsert(where={
+            'serverID': str(interaction.guild.id)
+        },
+            data={
+                'create': {
+                    'serverID': str(interaction.guild.id),
+                    'announceRole': str(ping_role.id),
+                    'announceChannel': str(announce_channel.id),
+                    'logPermissionRole': str(logrole.id),
+                    'announcePermissionRole': str(schedule_role.id),
+                    'commandRole': str(command_role.id),
+                    'developerRole': str(developer_role.id)
+                }, 'update': {
+                    'announceRole': str(ping_role.id),
+                    'announceChannel': str(announce_channel.id),
+                    'logPermissionRole': str(logrole.id),
+                    'announcePermissionRole': str(schedule_role.id),
+                    'commandRole': str(command_role.id),
+                    'developerRole': str(developer_role.id)
+                }
+=======
         requiredRole = interaction.guild.get_role(1095826407894024192)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(1095826407894024192)):
+>>>>>>> master
 
             db = Prisma()
             await db.connect()
@@ -270,9 +301,9 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
     
     @app_commands.command(name="editconfig", description="Edit bot permission settings")
     async def editconfig(self, interaction: discord.Interaction, logrole: discord.Role = None,
-                        schedule_role: discord.Role = None, announce_channel: discord.TextChannel = None,
-                        command_role: discord.Role = None, developer_role: discord.Role = None,
-                        ping_role: discord.Role = None):
+                        response_leaders: discord.Role = None, resp_announcement_channel: discord.TextChannel = None,
+                        leadership_role: discord.Role = None, developer_role: discord.Role = None,
+                        response_pings: discord.Role = None):
         db = Prisma()
         await db.connect()
 
@@ -286,34 +317,34 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
         update_data = {}
         if logrole:
             update_data['logPermissionRole'] = str(logrole.id)
-        if schedule_role:
-            update_data['announcePermissionRole'] = str(schedule_role.id)
-        if announce_channel:
-            update_data['announceChannel'] = str(announce_channel.id)
-        if command_role:
-            update_data['commandRole'] = str(command_role.id)
+        if response_leaders:
+            update_data['announcePermissionRole'] = str(response_leaders.id)
+        if resp_announcement_channel:
+            update_data['announceChannel'] = str(resp_announcement_channel.id)
+        if leadership_role:
+            update_data['commandRole'] = str(leadership_role.id)
         if developer_role:
             update_data['developerRole'] = str(developer_role.id)
-        if ping_role:
-            update_data['announceRole'] = str(ping_role.id)
+        if response_pings:
+            update_data['announceRole'] = str(response_pings.id)
 
         await db.server.update(where={'serverID': str(interaction.guild.id)}, data=update_data)
         await db.disconnect()
-
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         embed = embedBuilder(embedType="Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully updated server configs!",
                             embedDesc=f"{interaction.guild.name}'s Server Configuration updated: ")
-        if ping_role:
-            embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
+        if response_pings:
+            embed.add_field(name="Response pings: ", value="<@&" + str(serverConfig.announceRole) + ">")
         if logrole:
-            embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
-        if schedule_role:
-            embed.add_field(name="Response Leaders: ", value="<@&" + str(schedule_role.id) + ">")
-        if announce_channel:
-            embed.add_field(name="Response announcements channel: ", value="<#" + str(announce_channel.id) + ">")
-        if command_role:
-            embed.add_field(name="TRU Leadership role: ", value="<@&" + str(command_role.id) + ">")
+            embed.add_field(name="Member role: ", value="<@&" + str(serverConfig.logPermissionRole) + ">")
+        if response_leaders:
+            embed.add_field(name="Response Leaders: ", value="<@&" + str(serverConfig.announcePermissionRole) + ">")
+        if resp_announcement_channel:
+            embed.add_field(name="Response announcements channel: ", value="<#" + str(serverConfig.announceChannel) + ">")
+        if leadership_role:
+            embed.add_field(name="TRU Leadership role: ", value="<@&" + str(serverConfig.commandRole) + ">")
         if developer_role:
-            embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
+            embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(serverConfig.developerRole) + ">")
 
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -331,7 +362,7 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
             embed = embedBuilder("Success", embedTitle=f"{interaction.guild.name} || Server Configurations", embedDesc=None)
             embed.add_field(name="Response pings:", value=f"<@&{server_config.announceRole}>")
             embed.add_field(name="Member role:", value=f"<@&{server_config.logPermissionRole}>")
-            embed.add_field(name="Response Leaders:", value=f"<@&{server_config.announceRole}>")
+            embed.add_field(name="Response Leaders:", value=f"<@&{server_config.announcePermissionRole}>")
             embed.add_field(name="Response announcement channel:", value=f"<#{server_config.announceChannel}>")
             embed.add_field(name="TRU Leadership role:", value=f"<@&{server_config.commandRole}>")
             embed.add_field(name="TRU Helper Dev role:", value=f"<@&{server_config.developerRole}>")
@@ -368,7 +399,7 @@ class DBCmds(commands.GroupCog, group_name='devreg'):
             if user == None or user == interaction.user:
                 try:
                     if db_register_new(str(interaction.user), interaction.user.id, roblox_profile_link):
-                        embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Successfully registered!",
+                        embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Successfully registered!",
                                               description=f"`Username:` {interaction.user}\n`User ID:` {interaction.user.id}\n`Roblox Profile:` {roblox_profile_link}",
                                               color=discord.Color.green())
                     else:
@@ -382,7 +413,7 @@ class DBCmds(commands.GroupCog, group_name='devreg'):
                 try:
                     if db_register_new(str(user), user.id, roblox_profile_link):
                         embed = discord.Embed(
-                            title=f"<:dsbbotSuccess:953641647802056756> Successfully registered {user}!",
+                            title=f"<:trubotAccepted:1096225940578766968> Successfully registered {user}!",
                             description=f"`Username:` {user}\n`User ID:` {user.id}\n`Roblox Profile:` {roblox_profile_link}",
                             color=discord.Color.green())
                     else:

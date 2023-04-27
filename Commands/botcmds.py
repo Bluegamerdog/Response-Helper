@@ -6,8 +6,7 @@ import time
 import asyncio
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-from Database_Functions.MaindbFunctions import (replace_value, clear_table)
-from Database_Functions.UserdbFunction import (add_devaccess_member, remove_devaccess_member, get_devaccess_members)
+from Database_Functions.PrismaFunctions import *
 from discord.ext import commands
 from discord import app_commands
 
@@ -24,16 +23,16 @@ class BotCmds(commands.Cog):
         if not TRULEAD(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use the restart command.", color=ErrorCOL))
         if commands != None:
-            await interaction.response.send_message(embed=discord.Embed(color=YellowCOL, title="<:dsbbotCaution:1067970676041982053> Syncing Commands..."))
+            await interaction.response.send_message(embed=discord.Embed(color=YellowCOL, title="<:trubotWarning:1099642918974783519> Syncing Commands..."))
             try:
                 await self.bot.tree.fetch_commands()
                 synced = await self.bot.tree.sync()
-                return await interaction.edit_original_response(embed=discord.Embed(color=DarkGreenCOL, title=f"<:dsbbotSuccess:953641647802056756> Synced {len(synced)} commands!"))
+                return await interaction.edit_original_response(embed=discord.Embed(color=DarkGreenCOL, title=f"<:trubotAccepted:1096225940578766968> Synced {len(synced)} commands!"))
             except Exception as e:
                 print(f"Error syncing commands: {e}")
                 return await interaction.edit_original_response(embed=discord.Embed(color=DarkRedCOL, title=f"<:dsbbotFailed:953641818057216050> Syncing failed!", description=f"**Error:** {e}"))
         else:
-            await interaction.response.send_message(embed=discord.Embed(color=YellowCOL, title="<:dsbbotCaution:1067970676041982053> Restarting..."))
+            await interaction.response.send_message(embed=discord.Embed(color=YellowCOL, title="<:trubotWarning:1099642918974783519> Restarting..."))
             print(f"=========\nBot restarted by {interaction.user}\n=========")
             os.execv(sys.executable, ['python'] + sys.argv)
     #COMPLETE        
@@ -42,7 +41,7 @@ class BotCmds(commands.Cog):
         if not DEVACCESS(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be member of TRUCOMM or above to use the shutdown command.", color=ErrorCOL))
         else:
-            embed = discord.Embed(color=ErrorCOL, title="<:dsbbotCaution:1067970676041982053> Shutting down...")
+            embed = discord.Embed(color=ErrorCOL, title="<:trubotWarning:1099642918974783519> Shutting down...")
             await interaction.response.send_message(embed=embed)
             print(f"=========\nBot closed by {interaction.user}\n=========")
             return await self.bot.close()
@@ -100,37 +99,39 @@ class BotCmds(commands.Cog):
         unix_time = int(time.mktime(self.start_time.timetuple()))
         await interation.response.send_message(embed=discord.Embed(color=TRUCommandCOL,title="TRU Helper Uptime", description=f"➥ TRU Helper started <t:{unix_time}:R> (<t:{unix_time}>)"))
         
-#COMPLETE FOR NOW     
+## Needs a rework cause I'd like this to be a thing ##
+'''     
 class DatabaseCmds(commands.GroupCog, group_name='db'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
 
-    @app_commands.command(name="edit", description="Able to change any value of the database. [DEVACCESS]")
+    @app_commands.command(name="edit", description="Able to change any value of the database.")
     @app_commands.choices(database=[
-        app_commands.Choice(name="Main Database", value="main"),
-        app_commands.Choice(name="Response Database", value="responses"),
+        app_commands.Choice(name="Operative Database", value="operative"),
+        app_commands.Choice(name="Response Database", value="response"),
         app_commands.Choice(name="Rank Database", value="ranks"),
-        app_commands.Choice(name="User Database", value="users")])
+        app_commands.Choice(name="Log Database", value="logs"),
+        app_commands.Choice(name="Server Database", value="server")])
     @app_commands.choices(action=[
         app_commands.Choice(name="Clear database [CAUTION]", value="clear"),
         app_commands.Choice(name="Change value", value="change")])
-    async def edit_db(self, interaction:discord.Interaction, database:app_commands.Choice[str], action:app_commands.Choice[str],table:str, column:str=None, old:str=None, new:str=None):
+    async def edit_db(self, interaction:discord.Interaction, database:app_commands.Choice[str], action:app_commands.Choice[str], where:str=None, old_data:str=None, new_data:str=None):
         if not DEVACCESS(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be listed under DEVACCESS to use this command.", color=ErrorCOL))
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Permission Denied!", description="You must be listed under DEVACCESS to use this command.", color=ErrorCOL))
         else:
             if action.value == "clear":
                 try:
-                    await interaction.response.send_message(embed=discord.Embed(description="<:dsbbotUnderReview:1067970676041982053> Looking for table..."))
-                    msg = await interaction.edit_original_response(embed = discord.Embed(color=HRCommandsCOL, description=f"<:dsbbotUnderReview:1067970676041982053> **Are you sure you want to clear {table}?**\nReact with <:dsbbotApproved:953642750039953418> to confirm.", colour=ErrorCOL))
-                    await msg.add_reaction("<:dsbbotApproved:953642750039953418>")
+                    await interaction.response.send_message(embed=discord.Embed(description="<:trubotBeingLookedInto:1099642414303559720> Checking database..."))
+                    msg = await interaction.edit_original_response(embed = discord.Embed(color=HRCommandsCOL, description=f"<:trubotWarning:1099642918974783519> **Are you sure you want to clear {table}?**\nReact with <:trubotApproved:1099642447526637670> to confirm.", colour=ErrorCOL))
+                    await msg.add_reaction("<:trubotApproved:1099642447526637670>")
                     
                     def check(reaction, user):
-                        return user == interaction.user and str(reaction.emoji) == '<:dsbbotApproved:953642750039953418>'
+                        return user == interaction.user and str(reaction.emoji) == '<:trubotApproved:1099642447526637670>'
                     try:
                         reaction, user_r = await self.bot.wait_for('reaction_add', check=check, timeout=10)
                     except asyncio.TimeoutError:
-                        embed = discord.Embed(color=ErrorCOL, description=f"<:dsbbotFailed:953641818057216050> Timed out waiting for reaction.")
+                        embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> Timed out waiting for reaction.")
                         tasks = [    msg.clear_reactions(),    interaction.edit_original_response(embed=embed)]
                         await asyncio.gather(*tasks)
 
@@ -138,52 +139,16 @@ class DatabaseCmds(commands.GroupCog, group_name='db'):
                         if DEVACCESS(user_r):
                             clear_table(database.value, table)
                             print(f"Cleared {table} by {interaction.user}!")
-                            embed = discord.Embed(title="<:dsbbotSuccess:953641647802056756> Point reset successful!", color=discord.Color.green())
-                            return await interaction.edit_original_response(embed = discord.Embed(title=f"<:dsbbotCaution:1067970676041982053> Database table `{table}` successfully cleared!", color=DarkGreenCOL))
+                            embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Point reset successful!", color=discord.Color.green())
+                            return await interaction.edit_original_response(embed = discord.Embed(title=f"<:trubotWarning:1099642918974783519> Database table `{database.value}` successfully cleared!", color=DarkGreenCOL))
                 except Exception as e:
                     return await interaction.edit_original_response(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL))  
             else:
                 try:
-                    replace_value(database.value, table, column, old, new)
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotSuccess:953641647802056756> Successfully updated!", description=f"**Table:** `{table}` || **Column:** `{column}`\n\nChanged: `{old}` -> `{new}`", color=SuccessCOL))
+                    data = edit_database_value(database.value, where, old_data, new_data)
+                    if data:
+                        return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Error!", description=f"{data}", color=ErrorCOL), ephemeral=True)
+                    return await interaction.response.send_message(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Successfully updated!", description=f"**Database:** `{database.value}` || **Column:** `{where}`\n\nChanged: `{old_data}` -> `{new_data}`", color=SuccessCOL))
                 except Exception as e:
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL), ephemeral=True)
-
-
- 
-    @app_commands.command(name="dev_access", description="Add/remove users to/from DEVACCESS. [DEVACCESS]")
-    async def dev_access_edit(self, interaction:discord.Interaction, add:discord.Member=None, remove:discord.Member=None, list_all:str=None):
-        if interaction.user.id != 776226471575683082 or not DEVACCESS(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be listed under DEVACCESS to use this command.", color=ErrorCOL))
-
-        if list_all:
-            members = get_devaccess_members()
-            if members:
-                members_list = []
-                for member_id in members:
-                    member = discord.utils.get(interaction.guild.members, id=int(member_id[0]))
-                    if member:
-                        members_list.append(member.mention)
-                members_list_str = '\n'.join(members_list)
-                return await interaction.response.send_message(embed=discord.Embed(title=f"List of all devaccess members:", description=members_list_str, color=TRUCommandCOL), ephemeral=True)
-            else:
-                return await interaction.response.send_message(embed=discord.Embed(description=f"<:dsbbotCaution:1067970676041982053> No members found in the devaccess database.", color=ErrorCOL), ephemeral=True)
-        if add:
-            added = add_devaccess_member(str(add.id), str(add))
-            if added:
-                return await interaction.response.send_message(embed=discord.Embed(description=f"<:dsbbotSuccess:953641647802056756> User {add.mention} has been added to the database.", color=SuccessCOL), ephemeral=True)
-            else:
-                return await interaction.response.send_message(embed=discord.Embed(description=f"<:dsbbotFailed:953641818057216050> User {add.mention} is already in the database.", color=ErrorCOL), ephemeral=True)
-        
-        if remove:
-            if await self.bot.is_owner(interaction.user):
-                removed = remove_devaccess_member(str(remove.id))
-                if removed:
-                    return await interaction.response.send_message(embed=discord.Embed(description=f"<:dsbbotSuccess:953641647802056756> User {remove.mention} has been removed from the database.", color=SuccessCOL), ephemeral=True)
-                else:
-                    return await interaction.response.send_message(embed=discord.Embed(description=f"<:dsbbotFailed:953641818057216050> User {remove.mention} was not found in the database.", color=ErrorCOL), ephemeral=True)
-            else:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="Only the bot owner may remove people from DEVACCESS.", color=ErrorCOL), ephemeral=True)
-        
-        return await interaction.response.send_message(embed=discord.Embed(description=f"<:dsbbotFailed:953641818057216050> No user was specified.", color=ErrorCOL), ephemeral=True)
-
+                    return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Error!", description=f"{e}", color=ErrorCOL), ephemeral=True)
+'''

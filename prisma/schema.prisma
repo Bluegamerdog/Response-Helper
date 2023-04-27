@@ -24,12 +24,14 @@ model operative {
 
 model response {
   //use discord message ID of the announcement as unique identifier (saves time :steamhappy:)
-  responseID         Int        @id @unique
+  responseID         String        @id @unique
   responseType       String
   timeStarted        String
   timeEnded          String
+  started            Boolean
   cancelled          Boolean
   spontaneous        Boolean
+  trellocardID       String
   Host               operative? @relation(fields: [operativeDiscordID], references: [discordID])
   operativeDiscordID String?
   operativeName      String?

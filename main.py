@@ -14,12 +14,12 @@ from discord import app_commands
 from discord.ext import commands
 
 
-from Database_Functions.MaindbFunctions import *
+
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import *
 from Commands.trumanagementcmds import ManagementCmds, QuotaCmds
-from Commands.botcmds import BotCmds, DatabaseCmds
+from Commands.botcmds import BotCmds
 from Commands.responsecmds import OperationCmds
 from Commands.othercmds import otherCmds
 from Commands.quotacmds import pointCmds, mypointsCmd
@@ -32,20 +32,19 @@ from Commands.testingcmds import testingCmds
 
 bot = commands.Bot(command_prefix=">", intents=discord.Intents().all())
 tree = app_commands.CommandTree(discord.Client(intents=discord.Intents().all()))
-blockdata = get_quota()
 start_time = datetime.now()
 @bot.event  
 async def on_ready():
     print("Loading imports...")
-    await bot.add_cog(DatabaseCmds(bot))
+    #await bot.add_cog(DatabaseCmds(bot))
     await bot.add_cog(BotCmds(bot, start_time))
     await bot.add_cog(ManagementCmds(bot))
     await bot.add_cog(OperationCmds(bot))
     await bot.add_cog(otherCmds(bot))
     #await bot.add_cog(QuotaCmds(bot))
     await bot.add_cog(mypointsCmd(bot))
-    await bot.add_cog(RegistryCmds(bot))
-    await bot.add_cog(RequestCmds(bot))
+    #await bot.add_cog(RegistryCmds(bot))
+    #await bot.add_cog(RequestCmds(bot))
     await bot.add_cog(testingCmds(bot))
     await bot.add_cog(SealDBCommands(bot))
     await bot.add_cog(QuotaCmds(bot))
@@ -67,15 +66,7 @@ async def on_ready():
         print(f"Error syncing commands: {e}")
         synced = []
     # Quota and notes output
-    quota = False
-    notes = False
-    if blockdata:
-        print(prfx + f"|| Quota block {blockdata[0]} set.")
-        quota = True
-        notes = True
-    else:
-        print(prfx + f"|| Quota data: No Active quota block set.")
-        notes = True
+    print(prfx + f"|| That is all for now. (Remove quota blocks for now)")
     
     # Embed message
     embed = discord.Embed(title="Bot Startup Info • InDev", color=discord.Color.green())
@@ -83,14 +74,7 @@ async def on_ready():
     embed.add_field(name="Bot ID", value=bot.user.id, inline=True)
     embed.add_field(name="Runtime Information", value=f"Discord Version: {discord.__version__} || Python Version: {platform.python_version()}", inline=False)
     embed.add_field(name="Synced Slash Commands", value=len(synced), inline=False)
-    
-    if quota:
-        embed.add_field(name="Quota status", value=f"Quota block {blockdata[0]} set", inline=False)
-    else:
-        embed.add_field(name="Quota status", value="No Active quota block set.", inline=False)
-    
-    if not notes:
-        embed.add_field(name="Notes", value="N/A", inline=False)
+    embed.add_field(name="Notes", value="That is all for now. (Remove quota blocks for now).", inline=False)
     
     channel = bot.get_channel(1096146385830690866)  # Startup-channel ID
     await channel.send(embed=embed)
