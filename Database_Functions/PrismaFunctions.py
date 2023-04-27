@@ -316,14 +316,14 @@ async def deleteResponse(responseID):
         return e
 
     
-async def checkForPlannedOperation(plannedTime):
+async def checkresponseTimes(plannedTime):
     try:
         db = Prisma()
         await db.connect()
-        planned_ops = await db.response.find_first(where={"timeStarted": str(plannedTime), "timeEnded": "Null"})
+        planned_response = await db.response.find_first(where={"timeStarted": str(plannedTime), "timeEnded": "Null", 'cancelled': False})
 
-        if planned_ops is not None:
-            return True
+        if planned_response is not None:
+            return planned_response
         return None
     except Exception as e:
         return e

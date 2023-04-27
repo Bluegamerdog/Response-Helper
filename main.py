@@ -19,7 +19,7 @@ from Functions.mainVariables import *
 from Functions.permFunctions import *
 #from Functions.randFunctions import *
 from Commands.trumanagementcmds import ManagementCmds, QuotaCmds
-from Commands.botcmds import BotCmds, DatabaseCmds
+from Commands.botcmds import BotCmds
 from Commands.responsecmds import OperationCmds
 from Commands.othercmds import otherCmds
 from Commands.quotacmds import pointCmds, mypointsCmd
@@ -37,15 +37,15 @@ start_time = datetime.now()
 @bot.event  
 async def on_ready():
     print("Loading imports...")
-    await bot.add_cog(DatabaseCmds(bot))
+    #await bot.add_cog(DatabaseCmds(bot))
     await bot.add_cog(BotCmds(bot, start_time))
     await bot.add_cog(ManagementCmds(bot))
     await bot.add_cog(OperationCmds(bot))
     await bot.add_cog(otherCmds(bot))
     #await bot.add_cog(QuotaCmds(bot))
     await bot.add_cog(mypointsCmd(bot))
-    await bot.add_cog(RegistryCmds(bot))
-    await bot.add_cog(RequestCmds(bot))
+    #await bot.add_cog(RegistryCmds(bot))
+    #await bot.add_cog(RequestCmds(bot))
     await bot.add_cog(testingCmds(bot))
     await bot.add_cog(SealDBCommands(bot))
     await bot.add_cog(QuotaCmds(bot))

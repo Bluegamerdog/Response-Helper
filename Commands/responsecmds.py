@@ -1,5 +1,4 @@
 import discord
-from colorama import Back, Fore, Style
 from discord.ext import commands
 from discord import app_commands
 from discord import ui
@@ -32,7 +31,7 @@ class ResponseAnnouncementButtons(discord.ui.View):
     
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def ConfirmButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        await interaction.response.defer()
+        await interaction.response.edit_message(embed=discord.Embed(description="<:trubotBeingLookedInto:1099642414303559720> Creating the trello card, updating the database and sending the announement...", color=TRUCommandCOL), view=None)
         trello_card_link = create_response_card(self.res_type, False, self.start_time, interaction.user.id) #Trello
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
@@ -52,7 +51,6 @@ class CommenceAnnouncemenetButtons(discord.ui.View):
         self.channel = channel
         self.fist_int = fist_int
         discord.ui.View.timeout = None
-        print(selected_response)
         self.selected_rep_id = selected_response
     
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
@@ -61,7 +59,7 @@ class CommenceAnnouncemenetButtons(discord.ui.View):
         channel = interaction.guild.get_channel(int(serverConfig.announceChannel))
         repmsg:discord.Message = await channel.fetch_message(int(self.selected_rep_id.responseID))
         rep_ann = repmsg.embeds[0]
-        rep_ann.title = f"<:trubotTRU:1096226111458918470> {self.selected_rep_id.responseType} Response | On-Going"
+        rep_ann.title = f"<:trubotTRU:1096226111458918470> {self.selected_rep_id.responseType} Response | Ongoing"
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
         await repmsg.edit(embed=rep_ann)
         msg = await repmsg.reply(f"{trurole.mention}", embed=self.embed, allowed_mentions=discord.AllowedMentions.all())
@@ -102,21 +100,27 @@ class ResponseSelect(discord.ui.Select):
                 selected_response = await getResponseInfo(interaction, int(self.values[0]))
                 test_ann = discord.Embed(title=f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response is now commencing!", color=TRUCommandCOL)
                 test_ann.add_field(name="Response Leader", value=f"{interaction.user.mention}", inline=False)
-                test_ann.add_field(name="Details", value=f"➥**Join link:** <profilelink>\n➥**Voice Channel:** <#{self.vc_id}>\n➥**Status:** {self.status}", inline=False)
+                resposne_leader, success = await fetch_operative(interaction)
+                test_ann.add_field(name="Details", value=f"➥**Join link:** {resposne_leader.profileLink}\n➥**Voice Channel:** <#{self.vc_id}>\n➥**Status:** {self.status}", inline=False)
                 await interaction.response.edit_message(embed=test_ann, view=CommenceAnnouncemenetButtons(test_ann, self.channel, interaction, selected_response))
             except Exception as e:
                 print(e)
         elif self.action_type == "cancel":
             try:
+                await interaction.response.defer()
                 serverConfig = await dbFuncs.fetch_config(interaction=interaction)
                 selected_response = await getResponseInfo(interaction, int(self.values[0]))
                 channel = interaction.guild.get_channel(int(serverConfig.announceChannel))
                 repmsg:discord.Message = await channel.fetch_message(int(selected_response.responseID))
+                add_cancelled_label(selected_response.trellocardID)
                 rep_ann = repmsg.embeds[0]
-                rep_ann.title = rep_ann.title + " | Cancelled"
+                if selected_response.spontaneous == True:
+                    rep_ann.title = f"<:trubotTRU:1096226111458918470> Spontaneus {selected_response.responseType} Response | Cancelled"
+                else:
+                    rep_ann.title = f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response | Cancelled"
                 can_ann = discord.Embed(title=f"{interaction.user.nick}'s {selected_response.responseType} Response has been cancelled!", description=f"**Reason:** {self.reason}", color=TRUCommandCOL)
                 await cancelResponse(interaction, str(selected_response.responseID))
-                await interaction.response.edit_message(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response cancelled!", description=f"→ [Trello Card]({get_trello_card(selected_response.trellocardID).short_url})", color=SuccessCOL), view=None)
+                await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response cancelled!", description=f"→ [Trello Card]({get_trello_card(selected_response.trellocardID).short_url})", color=SuccessCOL), view=None)
                 await repmsg.edit(embed=rep_ann)
                 await repmsg.reply(embed=can_ann)
             except Exception as e:
@@ -130,12 +134,18 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
         super().__init__(timeout=None)
         self.type = type
     
-    start_time = ui.TextInput(label='Time', placeholder="Provide the start time using ONLY an Unix timestamp.",style=discord.TextStyle.short, required=True)
+    start_time = ui.TextInput(label='Time', placeholder="ONLY Unix timestamp of start time. [ONLY NUMBERS]",style=discord.TextStyle.short, required=True)
     notes = ui.TextInput(label='Notes', placeholder="Purpose, goals, etc.", style=discord.TextStyle.paragraph, required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
-        if await checkForPlannedOperation(self.start_time) is True:
-            return await interaction.response.send_message(embed=embedBuilder("Warning", embedTitle=f"<:trubotWarning:1099642918974783519> There is already a response planned for around <t:{self.start_time}>!", embedDesc=None), ephemeral=True)
+        try:
+            start_time_int = int(self.start_time.value)
+        except ValueError:
+            return await interaction.response.send_message(embed=embedBuilder("Error", embedTitle=f"<:trubotDenied:1099642433588965447> Start time error!", embedDesc=f"ValueError: `start_time` can only be numbers. `{self.start_time}` is not a valid integer!"), ephemeral=True)
+
+        response_1 = await checkresponseTimes(self.start_time.value)
+        if response_1 is not None:
+            return await interaction.response.send_message(embed=embedBuilder("Warning", embedTitle=f"<:trubotDenied:1099642433588965447> Response Time Collision!", embedDesc=f"There is already a {response_1.responseType} response planned for <t:{self.start_time}> by {response_1.operativeName}."), ephemeral=True)
         else:
             serverConfig = await dbFuncs.fetch_config(interaction=interaction)
             self.channel = interaction.guild.get_channel(int(serverConfig.announceChannel))
@@ -193,9 +203,10 @@ class OperationCmds(commands.GroupCog, group_name='response'):
         await interaction.response.send_message(embed = discord.Embed(color=YellowCOL, title=f"Creating Trello card and updating the database..."), ephemeral=True)
         start_time = int(time.time())
         trello_card_link = create_response_card(rep_type.value, True, start_time, interaction.user.id)
-        repann = discord.Embed(title=f"<:trubotTRU:1096226111458918470> Spontaneous {rep_type.value} Response", color=TRUCommandCOL)
+        resposne_leader, success = await fetch_operative(interaction)
+        repann = discord.Embed(title=f"<:trubotTRU:1096226111458918470> Spontaneous {rep_type.value} Response | Ongoing", color=TRUCommandCOL)
         repann.add_field(name="Response Leader", value=f"{interaction.user.mention}", inline=False)
-        repann.add_field(name="Details:", value=f"➥**Join link:** <profilelink>\n➥**Voice Channel:** <#{vc.value}>\n➥**Status:** {status}", inline=False)
+        repann.add_field(name="Details:", value=f"➥**Join link:** {resposne_leader.profileLink}\n➥**Voice Channel:** <#{vc.value}>\n➥**Status:** {status}", inline=False)
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
         ann:discord.Message = await channel.send(trurole.mention, embed=repann, allowed_mentions=discord.AllowedMentions.all())
@@ -237,16 +248,19 @@ class OperationCmds(commands.GroupCog, group_name='response'):
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You do not have permission run this command."), ephemeral=True)
         response_data = await getUSERongoingResponses(interaction, interaction.user.id)
-        print(response_data)
         if response_data:
+            await interaction.response.defer(ephemeral=True)
             channel = interaction.guild.get_channel(int(serverConfig.announceChannel))
             repmsg:discord.Message = await channel.fetch_message(int(response_data.responseID))
             rep_ann = repmsg.embeds[0]
-            rep_ann.title = rep_ann.title + " | Concluded"
+            if response_data.spontaneous == True:
+                rep_ann.title = f"<:trubotTRU:1096226111458918470> Spontaneous {response_data.responseType} Response | Concluded"
+            else:
+                rep_ann.title = f"<:trubotTRU:1096226111458918470> {response_data.responseType} Response | Concluded"
             con_ann = discord.Embed(description=f"{interaction.user.mention}'s {response_data.responseType} response has concluded!", color=TRUCommandCOL)
             await repmsg.edit(embed=rep_ann)
             await repmsg.reply(embed=con_ann)
-            await interaction.response.send_message(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response Concluded!", description=f"→ [Trello Card]({get_trello_card(response_data.trellocardID).short_url})", color=SuccessCOL), ephemeral=True)
+            await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response Concluded!", description=f"→ [Trello Card]({get_trello_card(response_data.trellocardID).short_url})", color=SuccessCOL))
             await concludeResponse(interaction, str(response_data.responseID))
         else:
             await interaction.response.send_message(embed=discord.Embed(description=f"<:trubotDenied:1099642433588965447> You do not have an on-going response to conclude!", color=ErrorCOL), ephemeral=True)
