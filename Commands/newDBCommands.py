@@ -107,15 +107,15 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
             operativeName = operativeName_list[len(operativeName_list) - 1]
             dbResponse = await dbFuncs.registerUser(interaction, interaction.user.id, profilelink, operativeName)
             if dbResponse:
-<<<<<<< HEAD
+
                 successEmbed = embedBuilder("Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully Registered!",
                                             embedDesc="An operative with the following details was created: ")
                 operativeName = interaction.user.nick.split()[-1]
-=======
+
                 successEmbed = embedBuilder("Success", embedTitle="Success!",
                                             embedDesc="An operative with the following details was created: ")
 
->>>>>>> master
+
                 successEmbed.add_field(name="Operative name: ", value=operativeName)
                 successEmbed.add_field(name="Operative profile link: ", value=profilelink)
                 successEmbed.add_field(name="Operative rank: ", value=str(interaction.user.top_role.name))
@@ -226,7 +226,7 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
     async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
                            announce_channel: discord.TextChannel, command_role: discord.Role,
                            developer_role: discord.Role, ping_role: discord.Role):
-<<<<<<< HEAD
+
         db = Prisma()
         await db.connect()
         #await db.operative.
@@ -250,10 +250,10 @@ class SealDBCommands(commands.GroupCog, group_name='sealtest'):
                     'commandRole': str(command_role.id),
                     'developerRole': str(developer_role.id)
                 }
-=======
+
         requiredRole = interaction.guild.get_role(1095826407894024192)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(1095826407894024192)):
->>>>>>> master
+
 
             db = Prisma()
             await db.connect()
