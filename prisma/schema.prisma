@@ -17,6 +17,7 @@ model operative {
   rank        String
   profileLink String     @unique
   activeLog   Boolean
+  activeLogID String     @unique
   logs        logs[]
   response    response[]
 }

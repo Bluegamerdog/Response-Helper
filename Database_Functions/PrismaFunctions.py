@@ -46,17 +46,22 @@ async def registerUser(interaction: discord.Interaction, discordID: int, profile
         db = Prisma()
         await db.connect()
 
-        await db.operative.create({
+        operative = await db.operative.create({
             'discordID': str(discordID),
             'userName': name,
             'rank': str(interaction.user.top_role.name),
             'profileLink': profileLink,
-            'activeLog': False
+            'activeLog': False,
+            'activeLogID': "NULL"
         })
-        await db.disconnect()
-        return True
+        if operative is not None:
+            await db.disconnect()
+            return True
+        else:
+            await db.disconnect()
+            return 'An unknown error occurred.'
     except Exception as e:
-        return e
+        return str(e)
 
 
 """
@@ -83,22 +88,85 @@ await prisma.operative.update({
     }
 })
 """
+async def checkLog(interaction: discord.Interaction):
+    db = Prisma()
+    await db.connect()
+    operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
+    log = await db.logs.find_unique(where={'logID': str(operative.activeLogID)})
+    logID = operative.activeLogID
+    if logID == "NULL":
+        return "No log is currently started!", False
+    else:
+        return log, True
+async def prismaCancelLog(interaction: discord.Interaction):
+    try:
+        db = Prisma()
+        await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
+        log = await db.logs.find_unique(where={'logID': str(operative.activeLogID)})
+        logID = operative.activeLogID
+        if logID == "NULL":
+            return "No log is currently started!", False
+        print("Found a valid logID")
+        await db.logs.delete(where={'logID': logID})
+        await db.operative.update(where={'discordID': str(interaction.user.id)},
+                                  data={
+                                      'activeLog': False,
+                                      'activeLogID': "NULL",
+                                  })
 
-async def prismaCreatelog(interaction: discord.Interaction, unixTime: str, ):
+        return log, True
+    except Exception as e:
+        return e, False
+
+
+async def prismaEndLog(interaction: discord.Interaction, unixTime: str):
+    try:
+        db = Prisma()
+        await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
+        log = await db.logs.find_unique(where={'logID': str(operative.activeLogID)})
+        logID = operative.activeLogID
+        if logID == "NULL":
+            return "No log is currently started!", False
+        elapsed = round(((int(unixTime) - int(log.timeStarted))/60), 2)
+        if elapsed > 25:
+            await db.operative.update(where={'discordID': str(interaction.user.id)},
+                                      data={
+                                          'activeLog': False,
+                                          'activeLogID': "NULL",
+                                      })
+            await db.logs.update(where={'logID': str(logID)},
+                                      data={
+                                          'timeEnded': unixTime,
+                                          'timeElapsed': str(elapsed),
+                                      })
+            return str(elapsed), True
+        else:
+            timeRemaining = int(log.timeStarted) + 1500
+            return str("Log is eligible to end in **<t:" + str(timeRemaining) + ":R>**"), False
+    except Exception as e:
+        return str(e), False
+
+
+async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
     try:
         log_id = str(uuid.uuid4())[:8]
         db = Prisma()
         await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
         log = await db.logs.create({
             'logID': log_id,
             'timeStarted': unixTime,
             'timeEnded': "Null",
             'timeElapsed': "Null",
+            'operativeName': operative.userName
         })
         await db.operative.update(where={
             'discordID': str(interaction.user.id)
         }, data={
             'activeLog': True,
+            'activeLogID': log_id,
             'logs': {
                 'connect': {
                     'logID': log_id
@@ -170,7 +238,10 @@ async def fetch_operative(interaction: discord.Interaction):
         db = Prisma()
         await db.connect()
         operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
-        return operative, True
+        if operative is not None:
+            return operative, True
+        else:
+            return "No operative found!", False
 
     except Exception as e:
         return e, False
