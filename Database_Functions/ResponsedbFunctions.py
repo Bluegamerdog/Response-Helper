@@ -46,9 +46,9 @@ async def concludeResponse(interaction:discord.Interaction, responseID:str):
     try:    
         db = Prisma()
         await db.connect()
-        time_Ended = str(time.time())
+        time_Ended = int(time.time())
         await db.response.update(where={'responseID' : str(responseID)},
-                                 data={'timeEnded' : time_Ended, 'started' : False})
+                                 data={'timeEnded' : str(time_Ended), 'started' : False})
         
         await db.disconnect()
         return True
@@ -112,6 +112,30 @@ async def getUSERongoingResponses(interaction:discord.Interaction, hostDiscordID
         
         await db.disconnect()
         return response
+    except Exception as e:
+        return e
+    
+async def getUSERResponses(hostDiscordID:str):
+    try:
+        db = Prisma()
+        await db.connect()
+        
+        user_responses = await db.response.find_many(where={'operativeDiscordID': str(hostDiscordID)})
+        
+        await db.disconnect()
+        return user_responses
+    except Exception as e:
+        return e
+    
+async def getAllResponses():
+    try:
+        db = Prisma()
+        await db.connect()
+        
+        responses = await db.response.find_many()
+        
+        await db.disconnect()
+        return responses
     except Exception as e:
         return e
 

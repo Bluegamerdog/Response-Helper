@@ -278,8 +278,58 @@ class responseCmds(commands.GroupCog, group_name='response'):
             await interaction.response.send_message(view=view, ephemeral=True)
         else:
             await interaction.response.send_message(embed=discord.Embed(description=f"<:trubotDenied:1099642433588965447> You do not have an on-going or scheduled response to cancel!", color=ErrorCOL), ephemeral=True)
+    
+    @app_commands.command(name="view", description="Used to view response chains.")
+    async def view_response(self, interaction: discord.Interaction, response_leader:discord.Member = None):
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        await interaction.response.defer(ephemeral=True)
+        # Fetch the response chains from the database
+        if response_leader:
+            response_chains = await getUSERResponses(response_leader.id)
+            response_embed = discord.Embed(color=TRUCommandCOL, title=f"Response Overview - {response_leader.nick}")
+        else:
+            response_chains = await getAllResponses()
+            response_embed = discord.Embed(color=TRUCommandCOL, title="General Response Overview")
             
-    @app_commands.command(name="deleteresponse", description="ONLY FOR DEVELOPMENT")
+        #print(response_chains)
+        # Limit of 15 responses at a time (Maybe add buttons again at one point)
+        response_chains = response_chains[:15]
+
+        # Sort the response chains by start time
+        response_chains.sort(key=lambda r: r.timeStarted, reverse=True)
+        
+        
+        # Format the response chains as a string
+        if response_chains:
+            for i, response in enumerate(response_chains):
+                if response.cancelled:
+                    status = "Canclled"
+                elif response.started:
+                    status = "Ongoing"
+                elif response.timeEnded:
+                    status = "Concluded"
+                else:
+                    status = "Scheduled"
+                response_embed.add_field(
+                    name=f"{response.responseType} || {response.operativeName}",
+                    value=f"""
+                        >>> Started: <t:{response.timeStarted}>
+                        Ended: {'N/A' if str(response.timeEnded) == 'Null' else f'<t:{response.timeEnded}>'}
+                        Status: {status}
+                        Spontaneous: {response.spontaneous}
+                        Trello Card: {get_trello_card(response.trellocardID).short_url}
+                    """,
+                    inline=False
+                )
+
+        else:
+            response_embed.add_field(name="", value="No responses found in the database.")
+
+
+        await interaction.edit_original_response(embed=response_embed)
+    
+    # Temporary       
+    @app_commands.command(name="delete", description="ONLY FOR DEVELOPMENT")
     async def delete_response(self, interaction:discord.Interaction, response_id:str):
         if DEVACCESS(interaction.user):
             if await deleteResponse(responseID=response_id) is True:

@@ -4,6 +4,7 @@ import math
 from discord.ext import commands
 from discord import app_commands
 import datetime
+import time
 
 from Functions.mainVariables import *
 from Functions.permFunctions import *
@@ -36,7 +37,11 @@ class testingCmds(commands.Cog):
 
     @app_commands.command(name="testing", description="Current: responseIDs")
     async def testing3(self, interaction:discord.Interaction):
-        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+        #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+        timenow1 = str(time.time())
+        timenow2 = int(time.time())
+        await interaction.response.send_message(f"{timenow1}\n{timenow2}", ephemeral=True)
+        
         
     
 class oldpatrolCmds(commands.GroupCog, group_name="patrol"):
