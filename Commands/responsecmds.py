@@ -12,7 +12,7 @@ from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Functions.randFunctions import *
 from Functions.trelloFunctions import *
-from Database_Functions.responsedbFunctions import *
+from Database_Functions.ResponsedbFunctions import *
 from Database_Functions.UserdbFunction import *
 import Database_Functions.PrismaFunctions as dbFuncs
 from Database_Functions.PrismaFunctions import *
@@ -130,7 +130,6 @@ class ResponseSelect(discord.ui.Select):
         else:
             await interaction.response.send_message(embed=discord.Embed(description=f"<:trubotDenied:1099642433588965447> No valid action_type found!", color=ErrorCOL), ephemeral=True)
             
-
 class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
     def __init__(self, type:str):
         super().__init__(timeout=None)
@@ -158,7 +157,7 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
             await interaction.response.send_message(embed=repann, ephemeral=True, view=ResponseAnnouncementButtons(repann, channel=self.channel, res_type=self.type, start_time=int(self.start_time.value), fist_int=interaction))
 
 
-class OperationCmds(commands.GroupCog, group_name='response'):
+class responseCmds(commands.GroupCog, group_name='response'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         

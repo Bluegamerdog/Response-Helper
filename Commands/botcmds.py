@@ -1,17 +1,23 @@
-import discord
+import asyncio
+import datetime
 import os
 import sys
-import datetime
 import time
-import asyncio
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+import Database_Functions.PrismaFunctions as dbFuncs
+from Database_Functions.PrismaFunctions import *
+from Functions import permFunctions
+from Functions.formattingFunctions import embedBuilder
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-from Database_Functions.PrismaFunctions import *
-from discord.ext import commands
-from discord import app_commands
+
 
 # (COMPLTE)
-class BotCmds(commands.Cog):
+class botCmds(commands.Cog):
     def __init__(self, bot: commands.Bot, start_time):
         self.bot = bot
         self.start_time = start_time
@@ -98,7 +104,190 @@ class BotCmds(commands.Cog):
         uptime = current_time - self.start_time
         unix_time = int(time.mktime(self.start_time.timetuple()))
         await interation.response.send_message(embed=discord.Embed(color=TRUCommandCOL,title="TRU Helper Uptime", description=f"➥ TRU Helper started <t:{unix_time}:R> (<t:{unix_time}>)"))
+
+
+
+
+class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
         
+    @app_commands.command(name="set", description="Configure bot permission settings")
+    async def serverconfig(self, interaction: discord.Interaction, logrole: discord.Role, schedule_role: discord.Role,
+                           announce_channel: discord.TextChannel, command_role: discord.Role,
+                           developer_role: discord.Role, ping_role: discord.Role):
+        requiredRole = interaction.guild.get_role(1095826407894024192)
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(1095826407894024192)):
+
+            db = Prisma()
+            await db.connect()
+            #await db.operative.f
+            await db.server.upsert(where={
+                'serverID': str(interaction.guild.id)
+            },
+                data={
+                    'create': {
+                        'serverID': str(interaction.guild.id),
+                        'announceRole': str(ping_role.id),
+                        'announceChannel': str(announce_channel.id),
+                        'logPermissionRole': str(logrole.id),
+                        'announcePermissionRole': str(schedule_role.id),
+                        'commandRole': str(command_role.id),
+                        'developerRole': str(developer_role.id)
+                    }, 'update': {
+                        'announceRole': str(ping_role.id),
+                        'announceChannel': str(announce_channel.id),
+                        'logPermissionRole': str(logrole.id),
+                        'announcePermissionRole': str(schedule_role.id),
+                        'commandRole': str(command_role.id),
+                        'developerRole': str(developer_role.id)
+                    }
+
+                })
+            await db.disconnect()
+
+            embed = embedBuilder(embedType="Success", embedTitle="Success!",
+                                 embedDesc="A configuration with the following details was made: ")
+            embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
+            embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
+            embed.add_field(name="Response Leaders: ", value="<@&" + str(schedule_role.id) + ">")
+            embed.add_field(name="Response announcements channel: ", value="<#" + str(announce_channel.id) + ">")
+            embed.add_field(name="TRU Leadership role: ", value="<@&" + str(command_role.id) + ">")
+            embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
+            await interaction.response.send_message(embed=embed, ephemeral=False)
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+    
+    @app_commands.command(name="edit", description="Edit bot permission settings")
+    async def editconfig(self, interaction: discord.Interaction, logrole: discord.Role = None,
+                        response_leaders: discord.Role = None, resp_announcement_channel: discord.TextChannel = None,
+                        leadership_role: discord.Role = None, developer_role: discord.Role = None,
+                        response_pings: discord.Role = None):
+        db = Prisma()
+        await db.connect()
+
+        server_config = await db.server.find_first(where={'serverID': str(interaction.guild.id)})
+        if not server_config:
+            await interaction.response.send_message(
+                "Configuration not found. Please use the `/serverconfig` command to create a configuration first.",
+                ephemeral=True)
+            return
+
+        update_data = {}
+        if logrole:
+            update_data['logPermissionRole'] = str(logrole.id)
+        if response_leaders:
+            update_data['announcePermissionRole'] = str(response_leaders.id)
+        if resp_announcement_channel:
+            update_data['announceChannel'] = str(resp_announcement_channel.id)
+        if leadership_role:
+            update_data['commandRole'] = str(leadership_role.id)
+        if developer_role:
+            update_data['developerRole'] = str(developer_role.id)
+        if response_pings:
+            update_data['announceRole'] = str(response_pings.id)
+
+        await db.server.update(where={'serverID': str(interaction.guild.id)}, data=update_data)
+        await db.disconnect()
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        embed = embedBuilder(embedType="Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully updated server configs!",
+                            embedDesc=f"{interaction.guild.name}'s Server Configuration updated: ")
+        if response_pings:
+            embed.add_field(name="Response pings: ", value="<@&" + str(serverConfig.announceRole) + ">")
+        if logrole:
+            embed.add_field(name="Member role: ", value="<@&" + str(serverConfig.logPermissionRole) + ">")
+        if response_leaders:
+            embed.add_field(name="Response Leaders: ", value="<@&" + str(serverConfig.announcePermissionRole) + ">")
+        if resp_announcement_channel:
+            embed.add_field(name="Response announcements channel: ", value="<#" + str(serverConfig.announceChannel) + ">")
+        if leadership_role:
+            embed.add_field(name="TRU Leadership role: ", value="<@&" + str(serverConfig.commandRole) + ">")
+        if developer_role:
+            embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(serverConfig.developerRole) + ">")
+
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+
+    @app_commands.command(name="view", description="View the current server configs.")
+    async def viewconfig(self, interaction: discord.Interaction):
+        db = Prisma()
+        await db.connect()
+        server_config = await db.server.find_first(where={"serverID": str(interaction.guild.id)})
+        await db.disconnect()
+
+        if server_config:
+            embed = embedBuilder("Success", embedTitle=f"{interaction.guild.name} || Server Configurations", embedDesc=None)
+            embed.add_field(name="Response pings:", value=f"<@&{server_config.announceRole}>")
+            embed.add_field(name="Member role:", value=f"<@&{server_config.logPermissionRole}>")
+            embed.add_field(name="Response Leaders:", value=f"<@&{server_config.announcePermissionRole}>")
+            embed.add_field(name="Response announcement channel:", value=f"<#{server_config.announceChannel}>")
+            embed.add_field(name="TRU Leadership role:", value=f"<@&{server_config.commandRole}>")
+            embed.add_field(name="TRU Helper Dev role:", value=f"<@&{server_config.developerRole}>")
+            await interaction.response.send_message(embed=embed, ephemeral=False)
+        else:
+            await interaction.response.send_message(content="No server configuration found", ephemeral=True)
+
+
+
+
+class rolebindCmds(commands.GroupCog, group_name="rolebind"):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @app_commands.command(name="add", description="Bind a role using ")
+    # @app_commands.describe(roles="Roles to bind")
+    async def rolebind(self, interaction: discord.Interaction, role: discord.Role,
+                       robloxid: int):
+        try:
+            serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+            requiredRole = interaction.guild.get_role(int(serverConfig.commandRole))
+            if permFunctions.checkPermission(interaction.user.top_role, requiredRole):
+                try:
+                    dbresponse = await dbFuncs.createBinding(role, robloxid, interaction)
+                    if dbresponse == True:
+                        successEmbed = embedBuilder("Success", embedTitle="A role binding was created for the "
+                                                                          "following: ",
+                                                    embedDesc="Discord role: <@&" + str(role.id) + "> and Roblox role "
+                                                                                                   "id of: " + str(
+                                                        robloxid))
+                        await interaction.response.send_message(embed=successEmbed)
+                    else:
+                        errEmbed = embedBuilder("Error", embedTitle="An error occured:",
+                                                embedDesc="Error: " + str(dbresponse))
+                        await interaction.response.send_message(embed=errEmbed)
+                except Exception as e:
+                    errEmbed = embedBuilder("Error", embedTitle="An error occured:",
+                                            embedDesc="Error: " + str(e))
+                    await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+            else:
+                errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                        embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+                await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+    rolebind._params["role"].required = True
+    rolebind._params["robloxid"].required = True
+
+
+    @app_commands.command(name="overview", description="View all set binds")
+    async def viewbinds(self, interaction: discord.Interaction):
+        try:
+            roles = await get_all_role_bindings()
+            if len(roles) > 0:
+                bind_list = discord.Embed(title=f"TRU Helper Rolebinds", color=TRUCommandCOL)
+                for role in roles:
+                    bind_list.add_field(name=f"➣ Rank Name: {role.rankName}", value=f"> Discord Role: <@&{role.discordRoleID}>\n> Roblox Rank ID: {role.RobloxRankID}", inline=False)
+                await interaction.response.send_message(embed=bind_list, ephemeral=True)
+            else:
+                await interaction.response.send_message("No role bindings found.")
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
 ## Needs a rework cause I'd like this to be a thing ##
 '''     
 class DatabaseCmds(commands.GroupCog, group_name='db'):

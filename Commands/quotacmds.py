@@ -1,25 +1,118 @@
 import asyncio
-import discord
-from prisma import Prisma
-from discord.ext import commands
-from discord import app_commands
+import datetime
+import time
 
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+import Database_Functions.PrismaFunctions as dbFuncs
+from Database_Functions.PrismaFunctions import *
+from Database_Functions.UserdbFunction import (add_points, get_points,
+                                               remove_points, reset_points)
+from Functions.formattingFunctions import embedBuilder
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-from Functions.randFunctions import (get_point_quota, quota_prog_display)
-from Database_Functions.UserdbFunction import (get_users_amount, add_points, remove_points, get_points, db_register_get_data, reset_points)
-from Database_Functions.MaindbFunctions import (get_quota)
-from Functions.formattingFunctions import embedBuilder
-import Database_Functions.PrismaFunctions as dbFuncs
-import Database_Functions.PrismaFunctions as DBFunc
-from Functions import permFunctions
+from prisma import Prisma
 
 # Embed types: Success, Warning, Error
 
-### REWORK ###
+class patrolCmds(commands.GroupCog, group_name="patrol"):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @app_commands.command(name="start", description="Start a log.")
+    async def startlog(self, interaction: discord.Interaction):
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+            operativeResponse, operativeResponseBool = await dbFuncs.fetch_operative(interaction)
+            if operativeResponseBool:
+                date_time = datetime.datetime.now()
+                unixTime = int(time.mktime(date_time.timetuple()))
+                dbResponse, dbResponseBool = await dbFuncs.prismaCreatelog(interaction, str(unixTime))
+                if dbResponseBool == True:
+                    successEmbed = embedBuilder("Success", embedTitle="Log successful started! ", embedDesc=("Log started at: <t:" + str(unixTime) + ":f>"))
+                    print(successEmbed)
+                    await interaction.response.send_message(embed=successEmbed)
+                else:
+                    errorEmbed = embedBuilder("Error", embedTitle="An error occurred.", embedDesc="Error details: " + str(dbResponse))
+                    await interaction.response.send_message(embed=errorEmbed)
+            else:
+                errorEmbed = embedBuilder("Error", embedTitle="An error occurred.",
+                                          embedDesc="Error details: " + str(operativeResponse))
+                await interaction.response.send_message(embed=errorEmbed)
+
+
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+
+
+
+    @app_commands.command(name="end", description="End your current log.")
+    async def endlog(self, interaction: discord.Interaction):
+        serverConfig = await fetch_config(interaction)
+        op, opResponse = await fetch_operative(interaction)
+        if not checkPermission(interaction.user.top_role, serverConfig.logPermissionRole):
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+            return
+        print(op)
+        print(opResponse)
+        if not opResponse:
+            errEmbed = embedBuilder("Error", embedTitle="Operative not found!",
+                                    embedDesc="Please make sure you are regsitered with the TRU bot before running commands!")
+            await interaction.response.send_message(embed=errEmbed)
+            return
+        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+            date_time = datetime.datetime.now()
+            unixTime = int(time.mktime(date_time.timetuple()))
+            dbMessage, dbSuccess = await prismaEndLog(interaction, str(unixTime))
+            if dbSuccess:
+                successEmbed = embedBuilder("Success", embedTitle="Log ended successfully!", embedDesc="A log with the following details below was ended.")
+                successEmbed.add_field(name="Time ended: ", value= "<t:" + str(unixTime) + ":f>")
+                successEmbed.add_field(name="Log Time: ", value= str(dbMessage) + " minutes")
+                await interaction.response.send_message(embed=successEmbed)
+            else:
+                errorEmbed = embedBuilder("Error", embedTitle="Unable to end log:", embedDesc="**Reason:** " + str(dbMessage))
+                await interaction.response.send_message(embed=errorEmbed)
+        else:
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+
+        
+    @app_commands.command(name="cancel", description="Cancel current log.")
+    async def cancellog(self, interaction: discord.Interaction):
+        serverConfig = await fetch_config(interaction)
+        if not checkPermission(interaction.user.top_role, serverConfig.logPermissionRole):
+            errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            await interaction.response.send_message(embed=errEmbed)
+            return
+        op, opResponse = await fetch_operative(interaction)
+        log, logResponse = await checkLog(interaction)
+        if not opResponse:
+            errEmbed = embedBuilder("Error", embedTitle="Operative not found!",
+                                    embedDesc="Please make sure you are regsitered with the TRU bot before running commands!")
+            await interaction.response.send_message(embed=errEmbed)
+        if not logResponse:
+            errEmbed = embedBuilder("Error", embedTitle="Log not found!",
+                                    embedDesc="No active log was found under your operative id.")
+            await interaction.response.send_message(embed=errEmbed)
+        if logResponse:
+            print("Found a log")
+            await prismaCancelLog(interaction)
+            successEmbed = embedBuilder("Error", embedTitle="Log cancelled.",
+                                        embedDesc="A log with the following details below was cancelled.")
+            successEmbed.add_field(name="Log ID: ", value=str(log.logID))
+            successEmbed.add_field(name="Log start time: ", value="<t:" + str(log.timeStarted) + ":f>")
+            await interaction.response.send_message(embed=successEmbed)
 
    
-
+### REWORK ###
 class pointCmds(commands.GroupCog, group_name='attendace'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -55,7 +148,7 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
         else:
             embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to remove points from **{member.display_name}**!", description="Invalid point number.", color=ErrorCOL)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            
+    '''        
     @app_commands.command(name="view",description="View someone else's current point count.")
     async def view(self, interaction: discord.Interaction, user:discord.Member=None):
         if not TRUMEMBER(interaction.user):
@@ -86,7 +179,7 @@ class pointCmds(commands.GroupCog, group_name='attendace'):
                 embed.add_field(name="", value=f"Rank: {rank}\nPoints: **{points}**", inline=False)
             
             await interaction.response.send_message(embed=embed)
-
+    '''
     @app_commands.command(name="reset",description="Resets the points of all users to zero. [TRUPC+]")
     async def reset(self, interaction:discord.Interaction):
         if not TRULEAD(interaction.user):

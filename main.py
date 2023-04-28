@@ -17,39 +17,60 @@ from discord.ext import commands
 
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-#from Functions.randFunctions import *
-from Commands.trumanagementcmds import ManagementCmds, QuotaCmds
-from Commands.botcmds import BotCmds
-from Commands.responsecmds import OperationCmds
-from Commands.othercmds import otherCmds
-from Commands.quotacmds import pointCmds, mypointsCmd
-from Commands.registrycmds import RegistryCmds
-from Commands.requestcmds import RequestCmds
+from Commands.botcmds import botCmds, serverconfigCmds, rolebindCmds
 from Commands.newDBCommands import SealDBCommands, DBCmds
-from Commands.testingcmds import testingCmds
+from Commands.othercmds import otherCmds
+from Commands.quotacmds import patrolCmds, pointCmds, mypointsCmd
+from Commands.registrycmds import registryCmds
+from Commands.requestcmds import requestCmds
+from Commands.responsecmds import responseCmds
+from Commands.testingcmds import testingCmds, oldpatrolCmds
+from Commands.trumanagementcmds import managementCmds, quotaCmds
+
+
+
+
+
+
+
+
 
 
 
 bot = commands.Bot(command_prefix=">", intents=discord.Intents().all())
 tree = app_commands.CommandTree(discord.Client(intents=discord.Intents().all()))
-start_time = datetime.now()
+start_time = datetime.datetime.now()
 @bot.event  
 async def on_ready():
     print("Loading imports...")
-    #await bot.add_cog(DatabaseCmds(bot))
-    await bot.add_cog(BotCmds(bot, start_time))
-    await bot.add_cog(ManagementCmds(bot))
-    await bot.add_cog(OperationCmds(bot))
-    await bot.add_cog(otherCmds(bot))
-    #await bot.add_cog(QuotaCmds(bot))
-    await bot.add_cog(mypointsCmd(bot))
-    #await bot.add_cog(RegistryCmds(bot))
-    #await bot.add_cog(RequestCmds(bot))
-    await bot.add_cog(testingCmds(bot))
+    
+    await bot.add_cog(botCmds(bot, start_time))
+    await bot.add_cog(serverconfigCmds(bot))
+    await bot.add_cog(rolebindCmds(bot))
+    
     await bot.add_cog(SealDBCommands(bot))
-    await bot.add_cog(QuotaCmds(bot))
     #await bot.add_cog(DBCmds(bot))
-    #await bot.add_cog(SealLoggingCommands(bot))
+    
+    await bot.add_cog(otherCmds(bot))
+    
+    await bot.add_cog(patrolCmds(bot))
+    #await bot.add_cog(pointCmds(bot))
+    #await bot.add_cog(mypointsCmd(bot))
+    
+    await bot.add_cog(registryCmds(bot))
+    
+    await bot.add_cog(requestCmds(bot))
+    
+    await bot.add_cog(responseCmds(bot))
+    
+    await bot.add_cog(testingCmds(bot))
+    #await bot.add_cog(oldpatrolCmds(bot))
+
+    await bot.add_cog(managementCmds(bot))
+    await bot.add_cog(quotaCmds(bot))
+    
+    
+
     
     
     # Console output

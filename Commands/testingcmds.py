@@ -19,28 +19,13 @@ class testingCmds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="trello_testing", description="Trello")
-    @app_commands.choices(op_type=[
-        app_commands.Choice(name="ALPHA", value="ALPHA"),
-        app_commands.Choice(name="BRAVO", value="BRAVO"),
-        app_commands.Choice(name="CHARLIE", value="CHARLIE"),
-        app_commands.Choice(name="DELTA-CHARLIE", value="DELTA-CHARLIE"),
-        app_commands.Choice(name="ECHO", value="ECHO"),
-        app_commands.Choice(name="DELTA-ECHO", value="DELTA-ECHO"),
-        app_commands.Choice(name="FOXTROT", value="FOXTROT"),
-        app_commands.Choice(name="DELTA-FOXTROT", value="DELTA-FOXTROT"),
-        app_commands.Choice(name="GOLF", value="GOLF"),
-        app_commands.Choice(name="DELTA-GOLF", value="DELTA-GOLF"),
-        app_commands.Choice(name="HOTEL", value="HOTEL"),
-        ])
-    async def testing(self, interaction: discord.Interaction, op_type:app_commands.Choice[str], unix_start:str, length:str, purpose:str ,co_host:discord.Member=None, supervisor:discord.Member=None,):
-        operation = None #op_type.value + str(random_oppal(3))
-        #newcard = await create_op_card(operation=operation, ringleader=interaction.user.display_name, length=length, purpstat=purpose,co_host=co_host, supervisor=supervisor, spontaneus=True)
-        #await interaction.response.send_message(f"Success!\n\n{newcard}", suppress_embeds=True)
-        pass
+    @app_commands.command(name="trello_testing", description="Testing trello functions")
+    async def trello_testing(self, interaction:discord.Interaction):
+        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
         
-    @app_commands.command(name="text_testing", description="Texts")
+    @app_commands.command(name="text_testing", description="Previewing text and embeds")
     async def testing2(self, interaction:discord.Interaction, member:discord.Member, reason:str):
+        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
         logsch = self.bot.get_channel(1054705433971003412) # 1008449677210943548 #audit-logs
         kickembed = discord.Embed(title=f"<:TRU:1060271947725930496> Kicked TRU Member", description=f"{member.mention} has been kicked from TRU by {interaction.user.mention}.\n\n**Reason:** {reason}", color=DarkRedCOL)
         kickembed.set_thumbnail(url=member.avatar.url)
@@ -49,24 +34,12 @@ class testingCmds(commands.Cog):
         await interaction.response.send_message(embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL),ephemeral=True)
         await member.send(embed = discord.Embed(title=f"You have been kicked from Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
 
-    @app_commands.command(name="testing", description="Free")
-    async def testing3(self, interaction:discord.Interaction, id:str=None):
-        responseID = str(uuid.uuid4())[:8]
-        
-        await interaction.response.send_message(content=f"{responseID}", ephemeral=True)
-
-    @app_commands.command(name="length", description="Temporary command to get time/points ratio.")
-    async def pointscmddiw(self, interaction:discord.Interaction, length:int):
-        if length <= 60:
-            amount = 2
-        else:
-            amount = 2
-            extra = math.floor((length - 60+7) / 30)
-            amount += extra
-        await interaction.response.send_message(f"`{length}` == `{amount}`")
+    @app_commands.command(name="testing", description="Current: responseIDs")
+    async def testing3(self, interaction:discord.Interaction):
+        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
         
     
-class patrolCmds(commands.GroupCog, group_name="patrol"):
+class oldpatrolCmds(commands.GroupCog, group_name="patrol"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     

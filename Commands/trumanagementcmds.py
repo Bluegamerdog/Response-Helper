@@ -19,7 +19,7 @@ roblox = Client("_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-
 ## -> Waiting on roblox group as well
 ## Commands turned into comments had broken functions and need a rework
 
-class QuotaCmds(commands.GroupCog, group_name='quota'):
+class quotaCmds(commands.GroupCog, group_name='quota'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     '''
@@ -77,7 +77,7 @@ class QuotaCmds(commands.GroupCog, group_name='quota'):
         # Will work on after some sleep but needs a DB integration
 
     
-class ManagementCmds(commands.Cog):
+class managementCmds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         

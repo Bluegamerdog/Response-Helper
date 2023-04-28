@@ -60,7 +60,7 @@ class medalButtons(discord.ui.View):
         else:
             return
 
-class RequestCmds(commands.GroupCog, group_name='request'):
+class requestCmds(commands.GroupCog, group_name='request'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         
