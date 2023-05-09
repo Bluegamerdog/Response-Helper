@@ -70,27 +70,16 @@ def get_member(id):
     return member.username, member.full_name
 
 def get_trello_card(card_id):
-
-    card = trello.get_card(card_id)
-
-    return card
+    try:
+        card = trello.get_card(card_id)
+        return card
+    except Exception as e:
+        print(e)
+        return None
 
 def add_cancelled_label(card_id):
     try:
-        trello_card = trello.get_card(card_id)
-        '''
-        try:
-            SPONLabel = trello.get_label("6437e2974720c87ca4fe3e98", boardid) #SPON
-            trello_card.remove_label(SPONLabel)
-        except Exception:
-            pass
-        
-        try:
-            SCHEDLabel = trello.get_label('6437eb47965e94c2c8cb2eb3', boardid)
-            trello_card.remove_label(SCHEDLabel)
-        except Exception:
-            pass
-        '''    
+        trello_card = trello.get_card(card_id) 
         cancelled_label = trello.get_label('6437e432cdf097cffdc2fda1', boardid)
         trello_card.add_label(cancelled_label)
         return True

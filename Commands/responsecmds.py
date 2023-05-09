@@ -18,6 +18,7 @@ import Database_Functions.PrismaFunctions as dbFuncs
 from Database_Functions.PrismaFunctions import *
 from Functions.formattingFunctions import embedBuilder
 
+
 ## Groundwork is compete ##
 # A lot of polishing, compacting and error handling still needed but functionally everything works
 
@@ -39,7 +40,7 @@ class ResponseAnnouncementButtons(discord.ui.View):
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
         msg:discord.Message = await self.channel.send(f"{trurole.mention}", embed=self.embed, allowed_mentions=discord.AllowedMentions.all())
         await createResponse(interaction, str(self.res_type), str(self.start_time), False, False, msg.id, trello_card_link.id) #Database
-        await self.fist_int.edit_original_response(view=None, embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response successfully announnced!", description=f"→ [Announcement]({msg.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
+        await self.fist_int.edit_original_response(view=None, embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response successfully announced!", description=f"→ [Announcement]({msg.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
         await msg.add_reaction("<:trubotTRU:1096226111458918470>")
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
@@ -173,9 +174,11 @@ class responseCmds(commands.GroupCog, group_name='response'):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You do not have permission run this command."), ephemeral=True)
-        else:
-            return await interaction.response.send_modal(ScheduleModal(type=type.value))
-    
+        if await viewOperative(interaction.user.id) == None:
+            await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You need to be registered to use this command."), ephemeral=True)
+        return await interaction.response.send_modal(ScheduleModal(type=type.value))
+
+            
     @app_commands.command(name="spontaneous", description="Used to start scheduled & spontaneous responses.")
     @app_commands.choices(vc=[
         app_commands.Choice(name="[QSO] On Duty 1", value="937473342884179980"),
@@ -198,6 +201,8 @@ class responseCmds(commands.GroupCog, group_name='response'):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"You do not have permission run this command."), ephemeral=True)
+        if await viewOperative(interaction.user.id) == None:
+            await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You need to be registered to use this command."), ephemeral=True)
         if await getUSERongoingResponses(interaction, interaction.user.id): #CHECK THAT USER DOES NOT HAVE AN ONGOING RESPONSE 
             return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, title=f"You still have an on-going response!", description=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
         
@@ -212,7 +217,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
         ann:discord.Message = await channel.send(trurole.mention, embed=repann, allowed_mentions=discord.AllowedMentions.all())
         await createResponse(interaction, str(rep_type.value), start_time, True , True, ann.id, trello_card_link.id)
-        await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response announnced!", description=f"→ [Announcement]({ann.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
+        await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response announced!", description=f"→ [Announcement]({ann.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
 
     
     @app_commands.command(name="commence", description="Used to start scheduled responses.")
@@ -231,6 +236,8 @@ class responseCmds(commands.GroupCog, group_name='response'):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"You do not have permission run this command."), ephemeral=True)
+        if await viewOperative(interaction.user.id) == None:
+            await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You need to be registered to use this command."), ephemeral=True)
         if await getUSERongoingResponses(interaction, interaction.user.id): #CHECK THAT USER DOES NOT HAVE AN ONGOING RESPONSE 
             return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, title=f"You still have an on-going response!", description=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
         
@@ -248,6 +255,8 @@ class responseCmds(commands.GroupCog, group_name='response'):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You do not have permission run this command."), ephemeral=True)
+        if await viewOperative(interaction.user.id) == None:
+            await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You need to be registered to use this command."), ephemeral=True)
         response_data = await getUSERongoingResponses(interaction, interaction.user.id)
         if response_data:
             await interaction.response.defer(ephemeral=True)
@@ -271,6 +280,8 @@ class responseCmds(commands.GroupCog, group_name='response'):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You do not have permission run this command."), ephemeral=True)
+        if await viewOperative(interaction.user.id) == None:
+            await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You need to be registered to use this command."), ephemeral=True)
         planned_responses = await getUSERplannedResponses(interaction, str(interaction.user.id))
         if planned_responses:
             channel = self.bot.get_channel(int(serverConfig.announceChannel))
@@ -282,7 +293,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
     @app_commands.command(name="view", description="Used to view response chains.")
     async def view_response(self, interaction: discord.Interaction, response_leader:discord.Member = None):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         # Fetch the response chains from the database
         if response_leader:
             response_chains = await getUSERResponses(response_leader.id)
@@ -303,13 +314,14 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if response_chains:
             for i, response in enumerate(response_chains):
                 if response.cancelled:
-                    status = "Canclled"
+                    status = "Cancelled"
                 elif response.started:
                     status = "Ongoing"
                 elif response.timeEnded:
                     status = "Concluded"
                 else:
                     status = "Scheduled"
+                trellocard = get_trello_card(response.trellocardID)
                 response_embed.add_field(
                     name=f"{response.responseType} || {response.operativeName}",
                     value=f"""
@@ -317,7 +329,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
                         Ended: {'N/A' if str(response.timeEnded) == 'Null' else f'<t:{response.timeEnded}>'}
                         Status: {status}
                         Spontaneous: {response.spontaneous}
-                        Trello Card: {get_trello_card(response.trellocardID).short_url}
+                        Trello Card: {trellocard.short_url if trellocard else "Error fetching the trello card."}
                     """,
                     inline=False
                 )

@@ -25,15 +25,13 @@ class testingCmds(commands.Cog):
         return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
         
     @app_commands.command(name="text_testing", description="Previewing text and embeds")
-    async def testing2(self, interaction:discord.Interaction, member:discord.Member, reason:str):
-        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
-        logsch = self.bot.get_channel(1054705433971003412) # 1008449677210943548 #audit-logs
-        kickembed = discord.Embed(title=f"<:TRU:1060271947725930496> Kicked TRU Member", description=f"{member.mention} has been kicked from TRU by {interaction.user.mention}.\n\n**Reason:** {reason}", color=DarkRedCOL)
-        kickembed.set_thumbnail(url=member.avatar.url)
-        kickembed.set_footer(text=f"ID: {member.id} • {datetime.datetime.now().strftime('%m/%d/%Y %H:%M %p')}")
-        logmsg = await logsch.send(embed=kickembed)
-        await interaction.response.send_message(embed = discord.Embed(title=f"<:trubotAccepted:1096225940578766968> Member removed", description=f"Successfully removed {member.mention} from TRU.\n\n**Reason:** {reason}\n→ [Audit Log]({logmsg.jump_url})", color=DarkRedCOL),ephemeral=True)
-        await member.send(embed = discord.Embed(title=f"You have been kicked from Defensive Squadron Bravo.",description=f"**Reason:** {reason}", color=DarkRedCOL))
+    async def testing2(self, interaction:discord.Interaction):
+        #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+        operativeName = interaction.user.nick.rsplit(maxsplit=1)[-1]
+        print(operativeName)
+        await interaction.response.send_message(f"{operativeName}", ephemeral=True)
+        
+
 
     @app_commands.command(name="testing", description="Current: responseIDs")
     async def testing3(self, interaction:discord.Interaction):

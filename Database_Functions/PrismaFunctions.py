@@ -41,27 +41,80 @@ async def updateUser(interaction: discord.Interaction, discordID: int, profileLi
         return e
  
 
-async def registerUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
+async def registerUser(discordUser:discord.Member, profileLink: str, name: str):
     try:
         db = Prisma()
         await db.connect()
 
         operative = await db.operative.create({
-            'discordID': str(discordID),
+            'discordID': str(discordUser.id),
             'userName': name,
-            'rank': str(interaction.user.top_role.name),
+            'rank': str(discordUser.top_role.name),
             'profileLink': profileLink,
             'activeLog': False,
-            'activeLogID': "NULL"
+
         })
         if operative is not None:
+            await db.disconnect()
+            return operative
+        else:
+            await db.disconnect()
+            return False
+    except Exception as e:
+        return str(e)
+    
+    
+async def updateOperative(discordUser: discord.Member, profileLink: str = None, name: str = None): # Help :sob:
+    try:
+        db = Prisma()
+        await db.connect()
+
+        operative = await db.operative.find_unique(where={'discordID': str(discordUser.id)})
+        if operative is not None:
+            update_data = {}
+            if profileLink:
+                update_data['profileLink'] = profileLink
+            if name:
+                update_data['userName'] = name
+            updated_operative = await db.operative.update(where={'discordID': str(discordUser.id)}, data=update_data)
             await db.disconnect()
             return True
         else:
             await db.disconnect()
-            return 'An unknown error occurred.'
+            return f"No operative found with Discord ID: {discordUser.id}"
     except Exception as e:
         return str(e)
+
+
+async def removeOperative(operativeID: int):
+    try:
+        db = Prisma()
+        await db.connect()
+
+        operative = await db.operative.find_unique(where={'discordID': str(operativeID)})
+
+        if operative:
+            await db.operative.delete(where={'discordID': str(operativeID)})
+            await db.disconnect()
+            return True
+        else:
+            await db.disconnect()
+            return f"Operative with ID `{operativeID}` not found!"
+    except Exception as e:
+        await db.disconnect()
+        return str(e)
+
+
+async def viewOperative(operativeID:int):
+    try:
+        db = Prisma()
+        await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(operativeID)})
+        await db.disconnect()
+        return operative   
+    except Exception as e:
+        return str(e)
+
 
 
 """
