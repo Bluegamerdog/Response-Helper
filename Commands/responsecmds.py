@@ -121,7 +121,7 @@ class ResponseSelect(discord.ui.Select):
                     rep_ann.title = f"<:trubotTRU:1096226111458918470> Spontaneus {selected_response.responseType} Response | Cancelled"
                 else:
                     rep_ann.title = f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response | Cancelled"
-                can_ann = discord.Embed(title=f"{interaction.user.nick}'s {selected_response.responseType} Response has been cancelled!", description=f"**Reason:** {self.reason}", color=TRUCommandCOL)
+                can_ann = discord.Embed(description=f"{interaction.user.mention}**'s {selected_response.responseType} response has cancelled!**\n\n**Reason:** {self.reason}", color=TRUCommandCOL)
                 await cancelResponse(interaction, str(selected_response.responseID))
                 await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response cancelled!", description=f"→ [Trello Card]({get_trello_card(selected_response.trellocardID).short_url})", color=SuccessCOL), view=None)
                 await repmsg.edit(embed=rep_ann)
@@ -315,19 +315,19 @@ class responseCmds(commands.GroupCog, group_name='response'):
             for i, response in enumerate(response_chains):
                 if response.cancelled:
                     status = "Cancelled"
+                elif str(response.timeEnded) != "Null":
+                    status = "Concluded"
                 elif response.started:
                     status = "Ongoing"
-                elif response.timeEnded:
-                    status = "Concluded"
                 else:
                     status = "Scheduled"
                 trellocard = get_trello_card(response.trellocardID)
                 response_embed.add_field(
-                    name=f"{response.responseType} || {response.operativeName}",
+                    name=f"{response.responseType} || {status}",
                     value=f"""
-                        >>> Started: <t:{response.timeStarted}>
-                        Ended: {'N/A' if str(response.timeEnded) == 'Null' else f'<t:{response.timeEnded}>'}
-                        Status: {status}
+                        >>> Response Leader: {interaction.guild.get_member(int(response.operativeDiscordID)).mention}
+                        Time Started: <t:{response.timeStarted}>
+                        Time ended: {'N/A' if str(response.timeEnded) == 'Null' else f'<t:{response.timeEnded}>'}
                         Spontaneous: {response.spontaneous}
                         Trello Card: {trellocard.short_url if trellocard else "Error fetching the trello card."}
                     """,

@@ -83,16 +83,30 @@ class managementCmds(commands.Cog):
         self.bot = bot
         
     ## TRU MANAGEMENT ##
-    '''
+    
     @app_commands.command(name="rank", description="Used to promote/demoted TRU members.")
     @app_commands.choices(rank=[
-    app_commands.Choice(name="Elite Vanguard", value="EVGD"),
-    app_commands.Choice(name="Vanguard", value="VGD"),
-    app_commands.Choice(name="Elite Operator", value="EOPR"),
-    app_commands.Choice(name="Senior Operator", value="SOPR"),
-    app_commands.Choice(name="Operator", value="OPR"),
-    app_commands.Choice(name="Entrant", value="ENT"),])
-    async def trurank_user(self, interaction:discord.Interaction, user:discord.Member, rank:app_commands.Choice[str]):
+    app_commands.Choice(name="Elite Vanguard", value="20"),
+    app_commands.Choice(name="Vanguard", value="15"),
+    app_commands.Choice(name="Elite Operator", value="5"),
+    app_commands.Choice(name="Senior Operator", value="4"),
+    app_commands.Choice(name="Operator", value="3"),
+    app_commands.Choice(name="Entrant", value="2"),])
+    async def trurank_user(self, interaction:discord.Interaction, member:discord.Member, rank:app_commands.Choice[str]):
+        serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
+            return await interaction.response.send_message(embed=discord.Embed(title="Missing permission!", description="Only TRU leadership and above may use this command.", color=ErrorCOL))
+        ranked_operative = await dbFuncs.viewOperative(member.id)
+        if ranked_operative == None:
+            return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> {member.mention} was not found in the registry."), ephemeral=True)
+        requested_role = await dbFuncs.fetch_rolebind(int(rank.value))
+        if not requested_role:
+            return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> Unable to find rolebind for Roblox rank ID `{rank.value}` and `{rank.name}`"), ephemeral=True)
+        await interaction.response.send_message(embed=discord.Embed(description=f"{requested_role}"))
+        
+        
+        
+        '''
         if not TRULEAD(interaction.user):
             return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL), ephemeral=True)
         elif not TRUROLE(user):
@@ -186,7 +200,7 @@ class managementCmds(commands.Cog):
                 else:
                     print("Something was missed...")
 
-    '''    
+    '''   
     @app_commands.command(name="truaccept", description="Used to accept new TRU members into the roblox group.")
     async def truaccept_group(self, interaction:discord.Interaction, member:discord.Member):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)

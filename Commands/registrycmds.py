@@ -28,7 +28,7 @@ class registryCmds(commands.GroupCog, group_name='operative'):
             Operative = user if user else interaction.user
             operativeName = Operative.nick.rsplit(maxsplit=1)[-1]
             dbResponse = await dbFuncs.registerUser(Operative, profilelink, operativeName)
-            if dbResponse:
+            if type(dbResponse) is not str:
                 successEmbed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Successfully registered!",
                                             description="New registry entry:", color=SuccessCOL)
 

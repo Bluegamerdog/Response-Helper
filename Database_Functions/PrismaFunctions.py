@@ -266,6 +266,17 @@ async def createBinding(discordRole: discord.role, robloxID: int, interaction: d
 
     except Exception as e:
         return e
+    
+async def fetch_rolebind(robloxID: int):
+    db = Prisma()
+    print(robloxID)
+    try:
+        await db.connect()
+        role = await db.ranks.find_unique(where={'RobloxRankID': str(robloxID)})
+        await db.disconnect()
+        return role
+    except Exception as e:
+        return e
 
 async def get_all_role_bindings():
     db = Prisma()
@@ -277,10 +288,12 @@ async def get_all_role_bindings():
 
 async def fetch_config(interaction: discord.Interaction):
     db = Prisma()
-    await db.connect()
     try:
+        await db.connect()
         serverObj = await db.server.find_unique(where={'serverID': str(interaction.guild_id)})
+        await db.disconnect()
         return serverObj
+        
 
     except Exception as e:
         return e
