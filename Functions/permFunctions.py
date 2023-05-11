@@ -7,6 +7,13 @@ def checkPermission(userRole: discord.role, targetRole: discord.role):
     #print("Target role: " + str(targetRole.position))
     return userRole.position >= targetRole.position
 
+#This needs to stay though
+def DEVACCESS(user: discord.Member):
+    roles = user.roles
+    for role in roles:
+        if role.name in ["TRU Helper Developer", "TRU Helper Dev Access"]:
+            return True
+    return False
 
 # Consolidate into a single function rather than do this every time :steamangry:
 def TRULEAD(user):  # TRU Captain and above
@@ -60,9 +67,4 @@ def onLoA(user):  # On Leave of Absence
     return False
 
 
-def DEVACCESS(user: discord.Member):
-    roles = user.roles
-    for role in roles:
-        if role.name in ["TRU Helper Developer"]:
-            return True
-    return False
+

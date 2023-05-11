@@ -241,25 +241,21 @@ async def removeUser(discordID: int, interaction: discord.Interaction):
         return e
 
 
-async def createBinding(discordRole: discord.role, robloxID: int, interaction: discord.Interaction):
+async def createBinding(discordRole:discord.Role, robloxID:int, interaction: discord.Interaction):
     db = Prisma()
     await db.connect()
-
+    
     try:
 
         await db.ranks.upsert(where={
-            'discordRoleID': str(discordRole.id)
-        }, data={
+            'discordRoleID': str(discordRole.id)}, data={
             'create': {
                 'discordRoleID': str(discordRole.id),
                 'RobloxRankID': str(robloxID),
-                'rankName': discordRole.name
-            }, 'update': {
+                'rankName': discordRole.name}, 
+            'update': {
                 'RobloxRankID': str(robloxID),
-                'rankName': discordRole.name
-            }
-
-        })
+                'rankName': discordRole.name}})
 
         await db.disconnect()
         return True
@@ -267,16 +263,36 @@ async def createBinding(discordRole: discord.role, robloxID: int, interaction: d
     except Exception as e:
         return e
     
-async def fetch_rolebind(robloxID: int):
+async def fetch_rolebind(robloxID:int = None, discordRole:discord.Role = None):
     db = Prisma()
-    print(robloxID)
     try:
         await db.connect()
-        role = await db.ranks.find_unique(where={'RobloxRankID': str(robloxID)})
+        if robloxID is not None:
+            role = await db.ranks.find_unique(where={'RobloxRankID': str(robloxID)})
+        elif discordRole is not None:
+            role = await db.ranks.find_unique(where={'discordRoleID': str(discordRole.id)})
+        else:
+            role = None
         await db.disconnect()
         return role
     except Exception as e:
         return e
+
+
+async def deleteBinding(discordRole:discord.Role):
+    db = Prisma()
+    await db.connect()
+
+    try:
+        await db.ranks.delete(where={
+            'discordRoleID': str(discordRole.id)})
+
+        await db.disconnect()
+        return True
+
+    except Exception as e:
+        return e
+
 
 async def get_all_role_bindings():
     db = Prisma()

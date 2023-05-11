@@ -39,9 +39,13 @@ class ResponseAnnouncementButtons(discord.ui.View):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
         msg:discord.Message = await self.channel.send(f"{trurole.mention}", embed=self.embed, allowed_mentions=discord.AllowedMentions.all())
-        await createResponse(interaction, str(self.res_type), str(self.start_time), False, False, msg.id, trello_card_link.id) #Database
-        await self.fist_int.edit_original_response(view=None, embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response successfully announced!", description=f"→ [Announcement]({msg.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
-        await msg.add_reaction("<:trubotTRU:1096226111458918470>")
+        new_response, success = await createResponse(interaction, str(self.res_type), str(self.start_time), False, False, msg.id, trello_card_link.id) #Database
+        if success == True:
+            await self.fist_int.edit_original_response(view=None, embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response successfully announced!", description=f"→ [Announcement]({msg.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
+            await msg.add_reaction("<:trubotTRU:1096226111458918470>")
+        else:
+            await self.fist_int.edit_original_response(view=None, embed=discord.Embed(title="<:trubotDenied:1099642433588965447> An error occured!", description=f"{new_response}", color=ErrorCOL))
+            
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def CancelButton(self, interaction:discord.Interaction, button:discord.ui.Button):
@@ -161,7 +165,53 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
 class responseCmds(commands.GroupCog, group_name='response'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+    
+    @app_commands.command(name="create", description=f"Used to manually add responses to the database. [Dev Only]")
+    @app_commands.choices(response_type=[
+        app_commands.Choice(name="Immediate Response", value="Immediate"),
+        app_commands.Choice(name="Wartime Response", value="Wartime"),
+        app_commands.Choice(name="Routine Response", value="Routine"),
+        app_commands.Choice(name="Training Response", value="Training"),
+        app_commands.Choice(name="Special Response", value="Special"),])
+    async def r_create(self, interaction: discord.Interaction, response_type:app_commands.Choice[str], time_started:str, started:bool, spontaneous:bool, ann_msg_id:str, trellocard_id:str, time_ended:str, cancelled:bool, response_host:discord.Member):
+        if DEVACCESS(interaction.user) is False:
+            await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> You do not have permission run this command."), ephemeral=True)
         
+        new_response, success = await createResponse(interaction, response_type.value, time_started, started, spontaneous, ann_msg_id, trellocard_id, time_ended, cancelled, response_host)
+        if success is True:
+            response_embed = discord.Embed(title = "<:trubotAccepted:1096225940578766968> Successfully created the following response:", color=SuccessCOL)
+            if type(new_response) is not str:
+                    if new_response.cancelled:
+                        status = "Cancelled"
+                    elif str(new_response.timeEnded) != "Null":
+                        status = "Concluded"
+                    elif new_response.started:
+                        status = "Ongoing"
+                    else:
+                        status = "Scheduled"
+                    trellocard = get_trello_card(new_response.trellocardID)
+                    response_embed.add_field(
+                        name=f"{new_response.responseType} || {status}",
+                        value=f"""
+                            >>> Response Leader: {interaction.guild.get_member(int(new_response.operativeDiscordID)).mention}
+                            Time Started: <t:{new_response.timeStarted}>
+                            Time ended: {'N/A' if str(new_response.timeEnded) == 'Null' else f'<t:{new_response.timeEnded}>'}
+                            Spontaneous: {new_response.spontaneous}
+                            Trello Card: {trellocard.short_url if trellocard else "Error fetching the trello card."}
+                        """,
+                        inline=False
+                    )
+
+            else:
+                response_embed.add_field(name="", value="No responses found in the database.")
+        else:
+            response_embed = discord.Embed(title="<:trubotDenied:1099642433588965447> Something went wrong while creating the response!", description=f"{new_response}" ,color=SuccessCOL)
+            return await interaction.response.send_message(embed=response_embed, ephemeral=True)
+        
+        return await interaction.response.send_message(embed=response_embed)
+            
+        
+    
     @app_commands.command(name="schedule", description="Used to schedule up-coming responses.")
     @app_commands.describe(type="Select your response type.")
     @app_commands.choices(type=[
@@ -216,7 +266,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
         ann:discord.Message = await channel.send(trurole.mention, embed=repann, allowed_mentions=discord.AllowedMentions.all())
-        await createResponse(interaction, str(rep_type.value), start_time, True , True, ann.id, trello_card_link.id)
+        new_response, success = await createResponse(interaction, str(rep_type.value), start_time, True , True, ann.id, trello_card_link.id)
         await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Response announced!", description=f"→ [Announcement]({ann.jump_url})\n→ [Trello Card]({trello_card_link.short_url})", color=SuccessCOL))
 
     

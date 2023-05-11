@@ -99,7 +99,7 @@ class managementCmds(commands.Cog):
         ranked_operative = await dbFuncs.viewOperative(member.id)
         if ranked_operative == None:
             return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> {member.mention} was not found in the registry."), ephemeral=True)
-        requested_role = await dbFuncs.fetch_rolebind(int(rank.value))
+        requested_role = await dbFuncs.fetch_rolebind(robloxID=int(rank.value))
         if not requested_role:
             return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> Unable to find rolebind for Roblox rank ID `{rank.value}` and `{rank.name}`"), ephemeral=True)
         await interaction.response.send_message(embed=discord.Embed(description=f"{requested_role}"))

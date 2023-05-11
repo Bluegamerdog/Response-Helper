@@ -245,12 +245,11 @@ class rolebindCmds(commands.GroupCog, group_name="rolebind"):
             if permFunctions.checkPermission(interaction.user.top_role, requiredRole):
                 try:
                     dbresponse = await dbFuncs.createBinding(role, robloxid, interaction)
-                    if dbresponse == True:
-                        successEmbed = embedBuilder("Success", embedTitle="A role binding was created for the "
-                                                                          "following: ",
-                                                    embedDesc="Discord role: <@&" + str(role.id) + "> and Roblox role "
-                                                                                                   "id of: " + str(
-                                                        robloxid))
+                    new_bind = await dbFuncs.fetch_rolebind(discordRole=role)
+                    if dbresponse == True and new_bind:
+                        
+                        successEmbed = embedBuilder("Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully added rolebind!",
+                                                    embedDesc=f"**➣ Rank Name: {new_bind.rankName}**\n> +Discord Role: {interaction.guild.get_role(int(new_bind.discordRoleID)).mention}\n> +Roblox Rank ID: `{new_bind.RobloxRankID}`")
                         await interaction.response.send_message(embed=successEmbed)
                     else:
                         errEmbed = embedBuilder("Error", embedTitle="An error occured:",
@@ -272,6 +271,34 @@ class rolebindCmds(commands.GroupCog, group_name="rolebind"):
     rolebind._params["role"].required = True
     rolebind._params["robloxid"].required = True
 
+    @app_commands.command(name="remove", description="Remove a role binding.")
+    async def role_unbind(self, interaction: discord.Interaction, discord_role: discord.Role):
+        try:
+            serverConfig = await dbFuncs.fetch_config(interaction=interaction)
+            requiredRole = interaction.guild.get_role(int(serverConfig.commandRole))
+
+            if not permFunctions.checkPermission(interaction.user.top_role, requiredRole):
+                errEmbed = embedBuilder("Error", embedTitle="Permission error:",
+                                        embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+                await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+                return
+
+            role = await fetch_rolebind(discordRole = discord_role)
+            if not role:
+                errEmbed = embedBuilder("Error", embedTitle="<:trubotDenied:1099642433588965447> No rolebind found!",
+                                        embedDesc=f"No rolebind was found for {discord_role.mention}.")
+                await interaction.response.send_message(embed=errEmbed)
+                return
+
+            await dbFuncs.deleteBinding(discord_role)
+            successEmbed = embedBuilder("Success", embedTitle="<:trubotAccepted:1096225940578766968> Rolebind successfully removed!",
+                                        embedDesc=f"**➣ Rank Name: {role.rankName}**\n> -Discord Role: {interaction.guild.get_role(int(role.discordRoleID)).mention}\n> -Roblox Rank ID: `{role.RobloxRankID}`")
+            await interaction.response.send_message(embed=successEmbed)
+
+        except Exception as e:
+            errEmbed = embedBuilder("Error", embedDesc=str(e), embedTitle="An error occurred.")
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
 
     @app_commands.command(name="overview", description="View all set binds")
     async def viewbinds(self, interaction: discord.Interaction):
@@ -281,7 +308,7 @@ class rolebindCmds(commands.GroupCog, group_name="rolebind"):
             if len(roles) > 0:
                 bind_list = discord.Embed(title=f"TRU Helper Rolebinds", color=TRUCommandCOL)
                 for role in roles:
-                    bind_list.add_field(name=f"➣ Rank Name: {role.rankName}", value=f"> Discord Role: <@&{role.discordRoleID}>\n> Roblox Rank ID: {role.RobloxRankID}", inline=False)
+                    bind_list.add_field(name=f"➣ Rank Name: {role.rankName}", value=f"> Discord Role: <@&{role.discordRoleID}>\n> Roblox Rank ID: `{role.RobloxRankID}`", inline=False)
                 await interaction.response.send_message(embed=bind_list)
             else:
                 await interaction.response.send_message("No role bindings found.")

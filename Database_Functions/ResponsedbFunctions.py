@@ -4,30 +4,32 @@ import discord
 
 # Mostly done but I def missed something :skull:
 
-async def createResponse(interaction:discord.Interaction, responseType:str, timeStarted:int, started:bool, spontaneous:bool, messageID:str, trellocard_ID:str):
+async def createResponse(interaction:discord.Interaction, responseType:str, timeStarted:int, started:bool, spontaneous:bool, messageID:str, trellocard_ID:str, timeEnded:str = None, cancelled:bool=None, hostdiscordUser:discord.Member=None):
     try:
         
         db = Prisma()
         await db.connect()
         
-        await db.response.create(data={
+        new_response = await db.response.create(data={
             'responseID' : str(messageID),
             'responseType' : responseType,
             'timeStarted' : str(timeStarted),
-            'timeEnded' : "Null",
+            'timeEnded' : "Null" if timeEnded is None else str(timeEnded),
             'started' : started,
-            'cancelled' : False,
+            'cancelled' : False if cancelled is None else cancelled,
             'spontaneous' : spontaneous,
             'trellocardID' : str(trellocard_ID),
-            'operativeDiscordID' : str(interaction.user.id),
-            'operativeName' : interaction.user.nick
+            'operativeDiscordID' : str(interaction.user.id) if hostdiscordUser is None else str(hostdiscordUser.id),
+            'operativeName' : str(interaction.user.nick) if hostdiscordUser is None else str(hostdiscordUser.nick)
         })
         
         await db.disconnect()
-        return True
+        if new_response:
+            return new_response, True
+        return None, False
     except Exception as e:
         print(e)
-        return e
+        return e, False
     
 async def cancelResponse(interaction:discord.Interaction, responseID:str):
     try:    
