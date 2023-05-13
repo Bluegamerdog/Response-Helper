@@ -12,11 +12,17 @@ response_trello = trello.get_board(boardid)
 def get_trello_id(discord_id):
     data = {
         '776226471575683082': '615a267981e91589231eac1c', # Blue
-        '530249755264155649': '6363f1ca2bad7b022333d37f', # DrWolf
         '505679486994612246': '630c4e722badc40052a30c37', # Ellusive
-        '1096140994556215407': '641e0c7656e96ac475f5ae9a', # TRU Helper
         '367338968661884928': '6379f8a4f73b000156033a2c', # tommie
+        
+        '1096140994556215407': '641e0c7656e96ac475f5ae9a', # TRU Helper
+        '201525891271098368': '6242339da8b6bf73b65173b0', # Seal
+        
+        '530249755264155649': '6363f1ca2bad7b022333d37f', # DrWolf
+        '313005277857185803': '5cb00cf689005359f8417948', # Coco
+        
         '1053377038490292264':'624ee34ad745880bd6047956' # Shush
+        
     }
     return data.get(str(discord_id), None)
 
