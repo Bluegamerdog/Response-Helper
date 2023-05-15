@@ -85,6 +85,15 @@ async def updateOperative(discordUser: discord.Member, profileLink: str = None, 
     except Exception as e:
         return str(e)
 
+async def updateOperative_rank(discordUser: discord.Member, new_rank:str):
+    try:
+        db = Prisma()
+        await db.connect()
+        updated_operative = await db.operative.update(where={'discordID': str(discordUser.id)}, data={'rank': str(new_rank)})
+        await db.disconnect()
+        return updated_operative
+    except Exception as e:
+        return str(e)
 
 async def removeOperative(operativeID: int):
     try:
@@ -263,7 +272,7 @@ async def createBinding(discordRole:discord.Role, robloxID:int, interaction: dis
     except Exception as e:
         return e
     
-async def fetch_rolebind(robloxID:int = None, discordRole:discord.Role = None):
+async def fetch_rolebind(robloxID:int = None, discordRole:discord.Role = None, rankName:str=None):
     db = Prisma()
     try:
         await db.connect()
@@ -271,6 +280,8 @@ async def fetch_rolebind(robloxID:int = None, discordRole:discord.Role = None):
             role = await db.ranks.find_unique(where={'RobloxRankID': str(robloxID)})
         elif discordRole is not None:
             role = await db.ranks.find_unique(where={'discordRoleID': str(discordRole.id)})
+        elif rankName is not None:
+            role = await db.ranks.find_unique(where={'rankName': str(rankName)})
         else:
             role = None
         await db.disconnect()

@@ -6,8 +6,8 @@ import random
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Functions.formattingFunctions import embedBuilder
-from Functions.randFunctions import (get_user_id_from_link)
-from Database_Functions.UserdbFunction import (db_register_get_data)
+from Functions.randFunctions import (get_user_id_from_link, in_roblox_group, change_nickname)
+#from Database_Functions.UserdbFunction import (db_register_get_data)
 from discord.ext import commands
 from discord import app_commands
 from discord import ui
@@ -76,6 +76,9 @@ class quotaCmds(commands.GroupCog, group_name='quota'):
     async def modify_quota(self, interaction:discord.Interaction, action:app_commands.Choice[str], new_amount:int=None):
         return await interaction.response.send_message(embed=embedBuilder("Warning", embedDesc="This command isn't done yet.",embedTitle="No worki yeti"), ephemeral=True)
         # Will work on after some sleep but needs a DB integration
+        
+    
+    
 
     
 class managementCmds(commands.Cog):
@@ -85,127 +88,96 @@ class managementCmds(commands.Cog):
     ## TRU MANAGEMENT ##
     
     @app_commands.command(name="rank", description="Used to promote/demoted TRU members.")
+    @app_commands.describe(member="Who are you ranking?", rank="To what rank?", reason="[DEMOTIONS ONLY] Why are they being demoted?")
     @app_commands.choices(rank=[
+    app_commands.Choice(name="totally real rank", value="25"),
     app_commands.Choice(name="Elite Vanguard", value="20"),
     app_commands.Choice(name="Vanguard", value="15"),
     app_commands.Choice(name="Elite Operator", value="5"),
     app_commands.Choice(name="Senior Operator", value="4"),
     app_commands.Choice(name="Operator", value="3"),
     app_commands.Choice(name="Entrant", value="2"),])
-    async def trurank_user(self, interaction:discord.Interaction, member:discord.Member, rank:app_commands.Choice[str]):
+    async def trurank_user(self, interaction:discord.Interaction, member:discord.Member, rank:app_commands.Choice[str], reason:str=None):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
-            return await interaction.response.send_message(embed=discord.Embed(title="Missing permission!", description="Only TRU leadership and above may use this command.", color=ErrorCOL))
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Missing permission!", description="Only TRU leadership and above may use this command.", color=ErrorCOL))
         ranked_operative = await dbFuncs.viewOperative(member.id)
         if ranked_operative == None:
             return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> {member.mention} was not found in the registry."), ephemeral=True)
-        requested_role = await dbFuncs.fetch_rolebind(robloxID=int(rank.value))
-        if not requested_role:
-            return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, description=f"<:trubotDenied:1099642433588965447> Unable to find rolebind for Roblox rank ID `{rank.value}` and `{rank.name}`"), ephemeral=True)
-        await interaction.response.send_message(embed=discord.Embed(description=f"{requested_role}"))
+        requested_rank = await dbFuncs.fetch_rolebind(robloxID=int(rank.value))
+        if not requested_rank:
+            return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, title="<:trubotDenied:1099642433588965447> Rolebind/Rank Error!", description=f"Could not find a rolebind for the requested rank!\n`Rank details: Specified Roblox role ID '{rank.value}' and rank name '{rank.name}' are not binded`"), ephemeral=True)
+        current_rank = await dbFuncs.fetch_rolebind(rankName=ranked_operative.rank)
+        if not current_rank:
+            return await interaction.response.send_message(embed = discord.Embed(color=ErrorCOL, title="<:trubotDenied:1099642433588965447> Rolebind/Rank Error!", description=f"Could not find a rolebind for {member.mention}'s current rank!\n`Rank without rolebind: '{ranked_operative.rank}'`"), ephemeral=True)
+        #Ranking Errors
+        if int(current_rank.RobloxRankID) == int(requested_rank.RobloxRankID):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Ranking Error!", description=f"{member.mention} is already ranked as **{requested_rank.rankName}**.", color=ErrorCOL), ephemeral=True)
+        if int(current_rank.RobloxRankID) >= 250 and int(requested_rank.RobloxRankID) < 250: #hehe
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Permission Error!", description=f"Blue said I can't demote TRU Leadership or above. {member.mention} is a member of TRU Leadership or above.", color=ErrorCOL))
+        #Roblox Group
+        TRU_ROBLOX_group = await roblox.get_group(15155175)
+        group_members = await TRU_ROBLOX_group.get_members().flatten()
+        roblox_user = await roblox.get_user(get_user_id_from_link(ranked_operative.profileLink))
+        if in_roblox_group(group_members, roblox_user) is False:
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> ROBLOX Group Error!", description=f"Could not find {member.mention} to be a member of the `{TRU_ROBLOX_group.name}` ROBLOX group. ([ROBLOX Group Link](https://www.roblox.com/groups/15155175/QSO-Tactical-Response-Unit))", color=ErrorCOL), ephemeral=True)
         
+        #Defer
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        logs_channel = interaction.guild.get_channel(1095835491485622323) #Audit Logs
+        tru_on_duty_channel = interaction.guild.get_channel(1096216219192926248) #bot-testing 
         
+        #Promotion
+        if int(current_rank.RobloxRankID) < int(requested_rank.RobloxRankID):
+            try:
+                await member.edit(nick=change_nickname(requested_rank.rankName, member.display_name))
+                await member.add_roles(interaction.guild.get_role(int(requested_rank.discordRoleID)))
+                await member.remove_roles(interaction.guild.get_role(int(current_rank.discordRoleID)))
+                updated_operative = await dbFuncs.updateOperative_rank(member, requested_rank.rankName)
+                await TRU_ROBLOX_group.get_member(roblox_user.id).set_rank(int(requested_rank.RobloxRankID))
+                #print(updated_operative)
+                dm_notification = discord.Embed(title="<a:trubotCelebration:1099643172012949555> TRU Promotion!", description=f"You have been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**!\n\nRank Specific Information:\n> TBA", color=DarkGreenCOL)
+                dm_notification.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
+                audit_log = discord.Embed(title="<:trubotWarning:1099642918974783519> User Promoted!", description=f"{member.mention} was promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=HRCommandsCOL)
+                audit_log.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
+                await logs_channel.send(embed = audit_log)
+                await member.send(embed=dm_notification)
+                await tru_on_duty_channel.send(f"Please congragulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
+                return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion Successful!", description=f"{member.mention} has been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
+            except Exception as e:
+                print(e)
+                embed = discord.Embed(title="<:trubotDenied:1099642433588965447> Promotion Error!", description=f"{e}", color=ErrorCOL)
+                return await interaction.edit_original_response(embed=embed, ephemeral=True)
         
-        '''
-        if not TRULEAD(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL), ephemeral=True)
-        elif not TRUROLE(user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotDeny:1073668785262833735> Denied!", description="You can only rank TRU members.", color=ErrorCOL), ephemeral=True)
+        #Demotions
+        elif int(current_rank.RobloxRankID) > int(requested_rank.RobloxRankID):
+            try:
+                await member.edit(nick=change_nickname(requested_rank.rankName, member.display_name))
+                await member.add_roles(interaction.guild.get_role(int(requested_rank.discordRoleID)))
+                await member.remove_roles(interaction.guild.get_role(int(current_rank.discordRoleID)))
+                updated_operative = await dbFuncs.updateOperative_rank(member, requested_rank.rankName)
+                await TRU_ROBLOX_group.get_member(roblox_user.id).set_rank(int(requested_rank.RobloxRankID))
+                #print(updated_operative)
+                dm_notification = discord.Embed(title="<:trubotWarning:1099642918974783519> TRU Demotion!", description=f"You have been demoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.\n\n**Reason:** {reason}", color=DarkRedCOL)
+                dm_notification.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
+                audit_log = discord.Embed(title="<:trubotWarning:1099642918974783519> User Demoted!", description=f"{member.mention} was demoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.\n\n**Reason:** {reason}", color=HRCommandsCOL)
+                audit_log.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
+                await logs_channel.send(embed = audit_log)
+                await member.send(embed=dm_notification)
+                return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Demotion Successful!", description=f"{member.mention} has been demoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
+            except Exception as e:
+                print(e)
+                embed = discord.Embed(title="<:trubotDenied:1099642433588965447> Demotion Error!", description=f"{e}", color=ErrorCOL)
+                return await interaction.edit_original_response(embed=embed, ephemeral=True)
+            
         else:
-            userrank = getrank(user)
-            if rank.value=="SSgt" and userrank[1] <=18:
-                if userrank[1] == 18:
-                    oldrank_role = discord.utils.get(interaction.guild.roles, name="Supervised Staff Sergeant")
-                    newrank_role = discord.utils.get(interaction.guild.roles, name="Staff Sergeant")
-                    await user.edit(nick=change_nickname("Staff Sergeant", user.display_name))
-                    await user.add_roles(newrank_role)
-                    await user.remove_roles(oldrank_role)
-                    embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Congrats!", description=f"You can now host your own operations, without the need for supervision! <a:dsbbotCelebration:1084176617993162762>", color=SuccessCOL)
-                    embed.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
-                    return await interaction.response.send_message(content=f"{user.mention}", embed=embed)
-                else:
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Rank Error!", description="You can only promote **Supervised Staff Sergeants** to **Staff Sergeant**.", color=ErrorCOL), ephemeral=True)
-            data = db_register_get_data(user.id)
-            newrank = changerank(rank.value)
-                        
-            if userrank[1] >= 252 or userrank==None:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Unable!", description="I cannot rank members of TRU Pre-Command and above.", color=ErrorCOL), ephemeral=True)
-            else:
-                if userrank[1] == newrank[1]:
-                    return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Already at that rank!", description=f"**{user.mention}** is already a **{userrank[0]}**.", color=ErrorCOL), ephemeral=True)
-                elif newrank[1] > userrank[1]:   
-                    #promote 
-                    try:
-                        
-                        userrank_role = discord.utils.get(interaction.guild.roles, name=str(userrank[0]))
-                        newrank_role = discord.utils.get(interaction.guild.roles, name=str(newrank[0]))
-                        
-                        group = await roblox.get_group(15155104)
-                        await user.edit(nick=change_nickname(newrank[0], user.display_name))
-                        if data:
-                            await group.get_member(get_user_id_from_link(data[2])).set_rank(newrank[1])
-                        else:
-                            username = await roblox.get_user_by_username(str(user.display_name).split()[-1])
-                            print(username.id)
-                            success = await group.get_member(username.id).set_rank(newrank[1])
-                            print(success)
-                            if userrank[1] != 1:
-                                await interaction.user.send(f"{user} was promoted, but not found in the database.")
-                            else:
-                                if rank.value == "PFC":
-                                    await user.send(embed= discord.Embed(title="Congratulations on successfully passing your Private phase!", description=f"You are now a full-fledged operative of TRU who's ready to stand their ground in the face of danger. 🛡️\n\nNow that you're a Private First Class, be sure to register with me by running the command `/user register` in <#1058677991238008913> and follow the subsequent instructions.\n\nI will shortly add you to the <#1058758885361594378>. Here is where you will log your patrols to meet your points quota. All other information regarding logging patrols is in the pinned messages.\n\nLastly, be sure to request your 'Defensive Squadron Bravo' role in main QSO by pinging any online member of QSO Precommand in <#937473342716395543>.\n\nIf any of this information is unclear, don't hesitate to ping anyone in TRU management. <:TRU:1060271947725930496>", color=TRUCommandCOL))
-                                    thread = self.bot.get_channel(1091329264764321843)
-                                    ondutychannel = self.bot.get_channel(1091329185500381235)
-                                    await thread.send(f"{user.mention}")
-                                    await ondutychannel.send(f"Please congragulate **{user.display_name}** on passing their Private phase!")
-                        await user.add_roles(newrank_role) 
-                        await user.remove_roles(userrank_role)
-                        if newrank[1] >= 18 and userrank[1] < 18:
-                            mr_role = discord.utils.get(interaction.guild.roles, name="Operation Ringleader")
-                            await user.add_roles(mr_role)
-                        if newrank[1] >= 20 and userrank[1] < 20:
-                            soup_role = discord.utils.get(interaction.guild.roles, name="Operation Supervisor")
-                            await user.add_roles(soup_role)
-                        embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion!", description=f"You have been promoted from **{userrank[0]}** to **{newrank[0]}**! <a:dsbbotCelebration:1084176617993162762>", color=SuccessCOL)
-                        embed.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
-                        return await interaction.response.send_message(content=f"{user.mention}", embed=embed)
-                    except Exception as e:
-                        embed = discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL)
-                        return await interaction.response.send_message(embed=embed, ephemeral=True)
-                        
-                elif newrank[1] < userrank[1]:
-                    #demote
-                    try:
-                        data = db_register_get_data(user.id)
-                        group = await roblox.get_group(15155104)
-                        await group.get_member(get_user_id_from_link(data[2])).set_rank(newrank[1])
-                        userrank_role = discord.utils.get(interaction.guild.roles, name=str(userrank[0]))
-                        newrank_role = discord.utils.get(interaction.guild.roles, name=str(newrank[0]))
-                        await user.edit(nick=change_nickname(newrank[0], user.display_name))
-                        await user.add_roles(newrank_role)
-                        await user.remove_roles(userrank_role)
-                        if userrank[1] >= 16 and newrank[1] <16:
-                            mr_role = discord.utils.get(interaction.guild.roles, name="Operation Ringleader")
-                            await user.remove_roles(mr_role)
-                        if userrank[1] >= 20 and newrank[1] < 20:
-                            soup_role = discord.utils.get(interaction.guild.roles, name="Operation Supervisor")
-                            await user.remove_roles(soup_role)
-                        embed = discord.Embed(title="<:trubotWarning:1099642918974783519> Demotion!", description=f"You have been demoted from **{userrank[0]}** to **{newrank[0]}**.", color=ErrorCOL)
-                        embed.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
-                        return await interaction.response.send_message(content=f"{user.mention}", embed=embed)
-                    except Exception as e:
-                        print(e)
-                        embed = discord.Embed(title="<:dsbbotFailed:953641818057216050> Error!", description=f"{e}", color=ErrorCOL)
-                        return await interaction.response.send_message(embed=embed, ephemeral=True)
-                else:
-                    print("Something was missed...")
-
-    '''   
+            return print("Bro I think you majorly missed something...")
+  
     @app_commands.command(name="truaccept", description="Used to accept new TRU members into the roblox group.")
     async def truaccept_group(self, interaction:discord.Interaction, member:discord.Member):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Missing Permission!", description=f"You must be a member of TRU leadership or above to use this command."), ephemeral=True)
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Missing permission!", description="Only TRU leadership and above may use this command.", color=ErrorCOL))
         try:
             username = str(member.display_name).split()[-1]
             group = await roblox.get_group(15155175)

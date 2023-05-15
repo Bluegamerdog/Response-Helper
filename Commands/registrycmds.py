@@ -12,6 +12,7 @@ from Functions.formattingFunctions import embedBuilder
 from Functions.mainVariables import *
 from Functions.permFunctions import *
 from Functions.randFunctions import *
+from Commands.trumanagementcmds import roblox
 
 ## Awaiting transfer ##
 
@@ -23,18 +24,18 @@ class registryCmds(commands.GroupCog, group_name='operative'):
     async def operative_register(self, interaction: discord.Interaction, profilelink: str, user:discord.Member=None):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            if user and not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
+            if user and user != interaction.user and not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
                 return await interaction.response.send_message(embed=discord.Embed(title="Missing permission!", description="Only TRU leadership and above may register other users.", color=ErrorCOL))
             Operative = user if user else interaction.user
-            operativeName = Operative.nick.rsplit(maxsplit=1)[-1]
-            dbResponse = await dbFuncs.registerUser(Operative, profilelink, operativeName)
+            roblox_user = await roblox.get_user(get_user_id_from_link(profilelink))
+            dbResponse = await dbFuncs.registerUser(Operative, profilelink, roblox_user.name)
             if type(dbResponse) is not str:
                 successEmbed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Successfully registered!",
                                             description="New registry entry:", color=SuccessCOL)
 
                 successEmbed.add_field(name="Username:", value=dbResponse.userName, inline=True)
                 successEmbed.add_field(name="TRU Rank:", value=dbResponse.rank, inline=True)
-                successEmbed.add_field(name="Profile Link:", value=f"[{dbResponse.userName}]({dbResponse.profileLink})", inline=True)
+                successEmbed.add_field(name="Profile Link:", value=f"[{roblox_user.display_name} (@{roblox_user.name})]({dbResponse.profileLink})", inline=True)
                 successEmbed.set_footer(text=f"Registered on: {datetime.datetime.utcnow().strftime('%m/%d/%Y %H:%M')}Z")
                 await interaction.response.send_message(embed=successEmbed)
             else:
@@ -59,8 +60,7 @@ class registryCmds(commands.GroupCog, group_name='operative'):
     async def operative_remove(self, interaction: discord.Interaction, user:discord.Member=None, userid:str=None):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
-            errEmbed = embedBuilder("Error", embedTitle="Permission error:", embedDesc="You are not: <@&" + str(serverConfig.commandRole) + ">")
-            return await interaction.response.send_message(embed=errEmbed)
+            return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Missing permission!", description="Only TRU leadership and above may use this command.", color=ErrorCOL))
         if userid:
             userid = int(userid)
         if user is None and userid is None:
