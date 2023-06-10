@@ -55,7 +55,7 @@ async def on_ready():
     
     await bot.add_cog(patrolCmds(bot))
     #await bot.add_cog(pointCmds(bot))
-    #await bot.add_cog(mypointsCmd(bot))
+    await bot.add_cog(mypointsCmd(bot))
     
     await bot.add_cog(registryCmds(bot))
     

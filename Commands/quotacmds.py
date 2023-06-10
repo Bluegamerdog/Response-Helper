@@ -234,7 +234,7 @@ class mypointsCmd(commands.Cog):
             else:
                 embed = embedBuilder("Success", embedTitle=f"<:trubotAccepted:1096225940578766968> User data found!", embedDesc=f"Displaying {interaction.user.mention}'s data for block `TBA`.")
                 embed.add_field(name="TRU Rank", value=f"> {data.rank}", inline=True)
-                embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if onLoA(member) else f"> Activty Duty", inline=True)
+                embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if onLoA(member) else f"> Active Duty", inline=True)
                 embed.add_field(name="", value="", inline=False) # Filler for 2x2 field config because discord
                 embed.add_field(name="Responses Attended", value=f"> `TBA`", inline=True) # Need to add response attendance count
                 embed.add_field(name="Patrols Logged", value=f"> {len(log_amount)}/Quota", inline=True) #(need to add something and be able to change quota at will)

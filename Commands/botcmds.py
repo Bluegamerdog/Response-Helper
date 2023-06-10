@@ -229,8 +229,6 @@ class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
             await interaction.response.send_message(content="No server configuration found", ephemeral=True)
 
 
-
-
 class rolebindCmds(commands.GroupCog, group_name="rolebind"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
