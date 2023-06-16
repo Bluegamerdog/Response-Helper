@@ -17,15 +17,13 @@ from discord.ext import commands
 
 from Functions.mainVariables import *
 from Functions.permFunctions import *
-from Commands.botcmds import botCmds, serverconfigCmds, rolebindCmds
-from Commands.newDBCommands import SealDBCommands, DBCmds
-from Commands.othercmds import otherCmds
-from Commands.quotacmds import patrolCmds, pointCmds, mypointsCmd
-from Commands.registrycmds import registryCmds
-from Commands.requestcmds import requestCmds
-from Commands.responsecmds import responseCmds
-from Commands.testingcmds import testingCmds, oldpatrolCmds
-from Commands.trumanagementcmds import managementCmds, quotaCmds
+from Commands.bot_cmds import botCmds, serverconfigCmds, rolebindCmds
+from Commands.command_testing import testingCmds, oldpatrolCmds
+from Commands.misc_cmds import otherCmds
+from Commands.quota_cmds import patrolCmds, viewdataCommand, quotaCmds
+from Commands.operator_cmds import operatorCmds
+from Commands.TBD_response_cmds import responseCmds
+#from Commands.strike_cmds import strikecmds
 
 
 
@@ -44,30 +42,31 @@ start_time = datetime.datetime.now()
 async def on_ready():
     print("Loading imports...")
     
+    #bot_cmds.py
     await bot.add_cog(botCmds(bot, start_time))
     await bot.add_cog(serverconfigCmds(bot))
     await bot.add_cog(rolebindCmds(bot))
     
-    await bot.add_cog(SealDBCommands(bot))
-    #await bot.add_cog(DBCmds(bot))
+    #misc_cmds.py
+    await bot.add_cog(otherCmds(bot, start_time))
     
-    await bot.add_cog(otherCmds(bot))
-    
+    #quota_cmds.py
     await bot.add_cog(patrolCmds(bot))
-    #await bot.add_cog(pointCmds(bot))
-    await bot.add_cog(mypointsCmd(bot))
+    await bot.add_cog(quotaCmds(bot))
+    await bot.add_cog(viewdataCommand(bot))
     
-    await bot.add_cog(registryCmds(bot))
+    #operator_cmds.py
+    await bot.add_cog(operatorCmds(bot))
     
-    await bot.add_cog(requestCmds(bot))
+    #TBA_response_cmds.py
+    #await bot.add_cog(responseCmds(bot))
     
-    await bot.add_cog(responseCmds(bot))
-    
+    #command_testing.py
     await bot.add_cog(testingCmds(bot))
     #await bot.add_cog(oldpatrolCmds(bot))
 
-    await bot.add_cog(managementCmds(bot))
-    await bot.add_cog(quotaCmds(bot))
+    #strike_cmds.py
+    #await bot.add_cog(strikeCmds(bot))
     
     
 
@@ -103,75 +102,70 @@ with open('token.json', 'r') as f:
     data = json.load(f)
     TOKEN = data['TOKEN']
 
-@bot.event
-async def on_message(message):
-    if lmfao_event == True and message.author.id != 776226471575683082:
-        if message.content.lower() == "lmfao":
-            await message.reply("Who is Lmfao? 🤨\nHe's a hacker, he's a Chinese hacker.\nLmfao, he's working for the Koreans isn't he?")
-
-
-## DEV COMMANDS ##
-class MsgGrp(app_commands.Group):
-    pass
-messagegroup = MsgGrp(name="dev")
-bot.tree.add_command(messagegroup)
-
-@messagegroup.command(name="send_message", description="Sends a message to a specified channel")
-async def send_message(interaction:discord.Interaction, channel:discord.TextChannel, message:str):
-    if DEVACCESS(interaction.user):
-        await channel.send(message)
-        await interaction.response.send_message("Message sent!", ephemeral=True)
-@messagegroup.command(name="edit_message", description="Edits the latest message sent by the bot")
-async def edit_message(interaction:discord.Interaction, channel:discord.TextChannel, message:str):
-    if DEVACCESS(interaction.user):
-        async for msg in channel.history(limit=1):
-            if msg.author == bot.user:
-                await msg.edit(content=message)
-                await interaction.response.send_message("Message edited!", ephemeral=True)
-                break
-        else:
-            await interaction.response.send_message("No recent message from the bot found in this channel!", ephemeral=True)
-
   
 
 # INFOBOARD COMMAND #
 class InfoboardOptions(discord.ui.Select):
     def __init__(self):
         options=[
-            discord.SelectOption(label="TRU Helper Infoboard", description="A list of all basic commands.", value="DHI"),
-            discord.SelectOption(label="Basic Commands", description="A list of all basic commands.", value="BC"),
-            discord.SelectOption(label="TRU Commands", description="A list of all commands available to TRU members.", value="DC"),
-            discord.SelectOption(label="Management Commands", description="A list of all commands available to TRUPC+.", value="MC"),
-            #discord.SelectOption(label="Squadrons Infoboard", description="Shows some general information about the server and squadrons.", value="SI")
+            discord.SelectOption(label="TRU Helper Infoboard", description="Information and details about the TRU Helper", value="1"),
+            discord.SelectOption(label="Miscellaneous Commands", description="All other commands that are not in a command group.", value="misc"),
+            discord.SelectOption(label="Patrol Commands", description="A list of commands related to patrol logs.", value="2"),
+            discord.SelectOption(label="Operator Commands", description="A list of commands specific to managing operators within the Unit.", value="3"),
+            discord.SelectOption(label="Response Commands", description="Commands used by response leaders for managing responses.", value="4"),
+            discord.SelectOption(label="Strike Commands", description="Commands related to issuing strikes or infractions.", value="5"),
+            discord.SelectOption(label="Serverconfig Commands", description="Used to configure server settings.", value="6"),
+            discord.SelectOption(label="Rolebind Commands", description="All commands for managing rolebinds.", value="7"),
         ]
         super().__init__(placeholder="Select a dropdown...", options=options, min_values=1, max_values=1)
         
     async def callback(self, interaction: discord.Interaction):
-        if self.values[0] == "DHI":
-            embed = discord.Embed(title="**<:TRU:1060271947725930496> TRU Helper Infoboard**", description="The TRU Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
-            embed.add_field(name="Credits", value="- Main developer: Blue\n- Bot host: Orange\n- Frontend Design: Blue, Shush & Polish\n- Bot testing: the suffering + Polish")
-            embed.set_footer(text="TRU Helper v.idk")
-            embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/lnHKwZ40MRhYKuNJpNUS8NQiaekqkgfW9TaGj-B5Yg0/https/tr.rbxcdn.com/580b2e0cd698decfa585464b50a4278c/150/150/Image/Png")
-        elif self.values[0] == "BC":
-            embed = discord.Embed(title="**Basic Commands**", description="All servers members can use these commands. They are represented by the color white.", color=BasiccommandCOL)
-            embed.add_field(name="**/whois**", value="Displays someones general and server informations.", inline=False)
-            embed.add_field(name="**/ping**", value="Shows the bot's response time in miliseconds.", inline=False)
-        elif self.values[0] == "DC":
-            embed = discord.Embed(title="**<:TRU:1060271947725930496> TRU Commands**", description="All TRU members PFC and above have access to these and are represented by the navy blue.", color=TRUCommandCOL)
-            embed.add_field(name="**/points overview**", value="Displays a leaderboard for points.", inline=False)
-            embed.add_field(name="**/points view**", value="View someone else's current point count.", inline=False)
-            embed.add_field(name="**/mypoints**", value="View your current point count.", inline=False)
-            embed.add_field(name="**/soup**", value="Adds or removes the Op. Supervisor Role. [EDS+]", inline=False)
-            #embed.add_field(name="**/rloa**", value="Coming soon:tm:...", inline=False)
-        elif self.values[0] == "MC":
-            embed = discord.Embed(title="**Management Commands**", description="TRU Pre-Command and above have access to these. They are represented by the color black.", color=HRCommandsCOL)
-            embed.add_field(name="**/points add/remove**", value="Adds/removes points to/from a user.", inline=False)
-            embed.add_field(name="**/points reset**", value="Resets the points of all users to zero.", inline=False)
-            embed.add_field(name="**/updatequota**", value="Updates the quota block number, start and end date.", inline=False)
-            embed.add_field(name="**/restart**", value="Restarts TRU Helper.", inline=False)
-            embed.add_field(name="**/shutdown**", value="Shuts down TRU Helper. [TRUCOMM+]", inline=False)
-        #elif self.values[0] == "SI":
-        #    embed = discord.Embed(title="**Server Info**")
+        if self.values[0] == "1":
+            embed = discord.Embed(title="**<:trubotTRU:1096226111458918470> TRU Helper Infoboard**", description="Provided below are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
+            embed.set_footer(text="TRU Helper | Python Version 1.1")
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1096146212245221496/1119208937061879859/TRU.png")
+        elif self.values[0] == "misc":
+            embed = discord.Embed(title="**Miscellaneous Commands**", description="Here are all other commands that are not in a command group.", color=TRUCommandCOL)
+            embed.add_field(name="</viewdata:1116998760178921472>", value="Gets an operators quota information.", inline=False)
+            embed.add_field(name="</ping:1096148299058270367>", value="Gets the bots response time in miliseconds.", inline=False)
+            embed.add_field(name="</uptime:1096148298919850051>", value="Shows how long the bot has been online for.", inline=False)
+            embed.add_field(name="</reload:1096148298919850048>", value="Restarts the bot. [BotDevs only]", inline=False)
+            embed.add_field(name="</shutdown:1096148298919850049>", value="Shuts the bot down. [BotDevs only]", inline=False)
+            embed.add_field(name="", value="More to be added...", inline=False)
+            ###       
+        elif self.values[0] == "2":
+            embed = discord.Embed(title="**Patrol Commands**", description="This command group is limited to Operators and above.", color=TRUCommandCOL)
+            embed.add_field(name="</patrol start:1101469326097264693>", value="Used to start a new patrol log.", inline=False)
+            embed.add_field(name="</patrol end:1101469326097264693>", value="Used to end an on-going patrol log.", inline=False)
+            embed.add_field(name="</patrol cancel:1101469326097264693>", value="Used to cancel an on-going patrol log.", inline=False)
+            embed.add_field(name="</patrol overview:1101469326097264693>", value="Used to view a certain or some recent patrol logs.", inline=False)
+        elif self.values[0] == "3":
+            embed = discord.Embed(title="**Operator Commands**", description="This command group is used the general managment of the Unit's members.", color=TRUCommandCOL)
+            embed.add_field(name="</operator register:1119208502674595850>", value="Registers and operator and adds them to the database.", inline=False)
+            embed.add_field(name="</operator update:1119208502674595850>", value="Updated a registed operators data in the database.", inline=False)
+            embed.add_field(name="</operator view:1119208502674595850>", value="Gives database information about an operator.", inline=False)
+            embed.add_field(name="</operator remove:1119208502674595850>", value="Removed a registed operator from the database. [TRUCapt+]", inline=False)
+            embed.add_field(name="</operator rank:1119208502674595850>", value="Sets an operator to the specified rank. [TRUCapt+]", inline=False)
+        elif self.values[0] == "4":
+            embed = discord.Embed(title="**Response Commands**", description="This command group is limited to Vanguard Officers and above.", color=TRUCommandCOL)
+            embed.add_field(name="To be added...", value="", inline=False)
+            ###
+        elif self.values[0] == "5":
+            embed = discord.Embed(title="**Strike Commands**", description="TRU Leadership and above has access to these. They are represented by the color black.", color=HRCommandsCOL)
+            embed.add_field(name="/strike overview", value="Gets a list of strikes for a specific operator.", inline=False)
+            embed.add_field(name="/strike view", value="Gets details about a specific strike.", inline=False)
+            embed.add_field(name="/strike give", value="Gives an operator a strike.", inline=False)
+            embed.add_field(name="/strike delete", value="Deleted a strike using the ID.", inline=False)
+        elif self.values[0] == "6":
+            embed = discord.Embed(title="**Serverconfig Commands**", description="Only <@&1099648545314848858>s have access to these.", color=HRCommandsCOL)
+            embed.add_field(name="</serverconfigs set:1101469326097264691>", value="Sets and links up specific permissions and channels in a database.", inline=False)
+            embed.add_field(name="</serverconfigs edit:1101469326097264691>", value="Updates existing server configurations.", inline=False)
+            embed.add_field(name="</serverconfigs view:1101469326097264691>", value="Provides all set server configurations for that server.", inline=False)
+        elif self.values[0] == "7":
+            embed = discord.Embed(title="**Rolebind Commands**", description="Only <@&1099648545314848858>s have access to these.", color=HRCommandsCOL)
+            embed.add_field(name="</rolebind add:1101469326097264692>", value="Adds a discord-roblox rolebind to the database.", inline=False)
+            embed.add_field(name="</rolebind remove:1101469326097264692>", value="Deletes an existing rolebind from the database.", inline=False)
+            embed.add_field(name="</rolebind overview:1101469326097264692>", value="Provies a list of all set rolebinds.", inline=False)
         
         await interaction.response.edit_message(embed=embed)
         
@@ -182,10 +176,9 @@ class InfoboardView(discord.ui.View):
 
 @bot.tree.command(name="infoboard",description="Shows bot information and a list of commands.")
 async def infoboard(interaction: discord.Interaction):
-    embed = discord.Embed(title="**TRU Helper Infoboard**", description="The TRU Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
-    embed.add_field(name="Credits", value="- Main developer: Blue\n- Bot host: Orange\n- Frontend Design: Blue, Shush & Polish\n- Bot testing: the suffering + Polish")
-    embed.set_footer(text="TRU Helper v.idk")
-    embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/lnHKwZ40MRhYKuNJpNUS8NQiaekqkgfW9TaGj-B5Yg0/https/tr.rbxcdn.com/580b2e0cd698decfa585464b50a4278c/150/150/Image/Png")
+    embed = discord.Embed(title="**<:trubotTRU:1096226111458918470> TRU Helper Infoboard**", description="Provided below are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
+    embed.set_footer(text="TRU Helper | Python Version 1.1")
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1096146212245221496/1119208937061879859/TRU.png")
     await interaction.response.send_message(embed=embed, view=InfoboardView())
 
 

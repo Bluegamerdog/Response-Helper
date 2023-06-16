@@ -50,8 +50,6 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
                                     embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
             await interaction.response.send_message(embed=errEmbed)
 
-
-
     @app_commands.command(name="end", description="End your current log.")
     async def endlog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction)
@@ -85,7 +83,6 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
                                     embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
             await interaction.response.send_message(embed=errEmbed)
 
-        
     @app_commands.command(name="cancel", description="Cancel current log.")
     async def cancellog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction)
@@ -113,113 +110,15 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
             successEmbed.add_field(name="Log start time: ", value="<t:" + str(log.timeStarted) + ":f>")
             await interaction.response.send_message(embed=successEmbed)
 
-   
-### REWORK ###
-class pointCmds(commands.GroupCog, group_name='attendace'):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    @app_commands.command(name="overview", description="Start a log.")
+    async def logoverview(self, interaction: discord.Interaction):
+        await interaction.response.send_message("Not done", ephemeral=True)
     
-
-    @app_commands.command(name="add", description="Increases the attendance counter of a user.")
-    async def add(self, interaction:discord.Interaction, member:discord.Member, amount:int):
-        user = interaction.user
-        if(not TRULEAD(user)): # check if user has permission
-            embed = discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to add points to user!", description=f"You must be a member of TRUPC or above to add points.")
-            await interaction.response.send_message(embed=embed)
-            return
-        if(type(amount)==int and int(amount) >= 1):
-            if add_points(member.id, amount) == True: # add points to the user
-                    embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully added {amount} point to **{member.display_name}**!" if amount == 1 else f"<:trubotAccepted:1096225940578766968> Successfully added {amount} points to **{member.display_name}**!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
-            else:
-                embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to add points to `{member}`!", description="User not found in registry database.", color=ErrorCOL)
-            await interaction.response.send_message(embed=embed)
-        else:
-            embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to add points to **{member.display_name}**!", description="Invalid point number.", color=ErrorCOL)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-
-    @app_commands.command(name="remove", description="Decreases the attendance counter of a user. [TRUPC+]")
-    async def remove(self, interaction:discord.Interaction, member:discord.Member, amount:int):
-        if not TRULEAD(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Failed to remove points from user!", description=f"You must be a member of TRUPC or above to remove points."))
-        if(type(amount)==int and int(amount)>=1):
-            if remove_points(member.id, amount) == True: #removes points from user
-                embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully removed {amount} point from **{member.display_name}**!" if amount == 1 else f"<:trubotAccepted:1096225940578766968> Successfully removed {amount} points from {member.display_name}!", description=f"**{member.display_name}** now has **{get_points(member.id)}** point." if int(get_points(member.id)) == 1 else f"**{member.display_name}** now has **{get_points(member.id)}** points." )
-            else:
-                embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to remove points from `{member}`!", description="User not found in registry database.", color=ErrorCOL)
-            await interaction.response.send_message(embed=embed)
-        else:
-            embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to remove points from **{member.display_name}**!", description="Invalid point number.", color=ErrorCOL)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    '''        
-    @app_commands.command(name="view",description="View someone else's current point count.")
-    async def view(self, interaction: discord.Interaction, user:discord.Member=None):
-        if not TRUMEMBER(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only TRU Private First Class or above may interact with TRU Helper."), ephemeral=True)
-        else:
-            embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Point data found for {user.display_name}!" if user and user != interaction.user else f"<:trubotAccepted:1096225940578766968> Point data found!")
-            if user == None:
-                user = interaction.user
-            points = get_points(user.id)
-            if points is False:
-                return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> No point data found for `{user}`!", description="User not found in registry database.", color=ErrorCOL))
-            username = str(user.display_name)
-            embed = discord.Embed(color=TRUCommandCOL, title=f"<:trubotAccepted:1096225940578766968> Point data for {username}!")
-            data = db_register_get_data(user.id)
-            quota, rank = get_point_quota(user, data)
-            if quota:
-                onloa = onLoA(user)
-                percent = float(points / quota * 100)
-                qm = quota_prog_display(percent, onloa)
-                if onloa == True:
-                    quota = 0
-                embed.add_field(name=f"{qm} {percent:.1f}% || {points}/{quota}", value="")
-                if not data[4]:
-                    embed.add_field(name="", value=f"Rank: **{rank}**\nPoints: **{points}**", inline=False)
-                else:
-                    embed.add_field(name="", value=f"Rank: **{rank}**\nPoints: **{points}**\nDays excused: **{data[4]}**", inline=False)
-            else:
-                embed.add_field(name="", value=f"Rank: {rank}\nPoints: **{points}**", inline=False)
-            
-            await interaction.response.send_message(embed=embed)
-    '''
-    @app_commands.command(name="reset",description="Resets the points of all users to zero. [TRUPC+]")
-    async def reset(self, interaction:discord.Interaction):
-        if not TRULEAD(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Failed to reset points!", description="You must be a member of TRUCOMM or above to purge the registry database.", color=ErrorCOL))
-        else:
-            await interaction.response.send_message(embed=discord.Embed(description="<:dsbbotUnderReview:1067970676041982053> Waiting for response..."))
-            embed = discord.Embed(color=HRCommandsCOL, description=f"<:dsbbotUnderReview:1067970676041982053> **Are you sure you want to reset the points?**\nReact with <:trubotApproved:1099642447526637670> to confirm.", colour=ErrorCOL)
-            msg = await interaction.edit_original_response(embed=embed)
-            await msg.add_reaction("<:trubotApproved:1099642447526637670>")
-            
-            
-            # Wait for the user's reaction
-            def check(reaction, user):
-                return user == interaction.user and str(reaction.emoji) == '<:trubotApproved:1099642447526637670>'
-            try:
-                reaction, user_r = await self.bot.wait_for('reaction_add', check=check, timeout=10)
-            except asyncio.TimeoutError:
-                embed = discord.Embed(color=ErrorCOL, description=f"<:dsbbotFailed:953641818057216050> Timed out waiting for reaction.")
-                tasks = [    msg.clear_reactions(),    interaction.edit_original_response(embed=embed)]
-                await asyncio.gather(*tasks)
-
-            else:
-                if TRULEAD(user_r):
-                    success = await reset_points()
-                    print("Points successfully reset!")
-                    if success:
-                        embed = discord.Embed(title="<:trubotAccepted:1096225940578766968> Point reset successful!", color=discord.Color.green())
-                        await interaction.edit_original_response(embed=embed)
-                    else:
-                        embed = discord.Embed(title="<:dsbbotFailed:953641818057216050> Point reset failed!", description=f"Something went wrong...", color=ErrorCOL)
-                        tasks = [    msg.clear_reactions(),    interaction.edit_original_response(embed=embed)]
-                        await asyncio.gather(*tasks)
-
-class mypointsCmd(commands.Cog):
+class viewdataCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.client = bot
     
-    @app_commands.command(name="viewdata",description="View someone elses current quota status.")
+    @app_commands.command(name="viewdata",description="View someones current quota status.")
     async def mypoints(self, interaction: discord.Interaction, member:discord.Member=None):
         try:
             if member==None:
@@ -246,5 +145,73 @@ class mypointsCmd(commands.Cog):
             await interaction.response.send_message(embed=errEmbed, ephemeral=True)
                 
 
+class quotaCmds(commands.GroupCog, group_name='quota'):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        
+    @app_commands.command(name="set",description="Updates specified activity requirement for specified rank.")
+    #@app_commands.describe(new_amount="Set the new quota requiremnt here if it is being changed.", activity_type="View: See the current quota. || log_amount: Set the log quota. || attendance_amount: Set the attendance quota. || toggle: Enable/disable the quota. (Quota=0)")
+    @app_commands.choices(activity_type=[
+        app_commands.Choice(name="patrol_requirement", value="patrol"),
+        app_commands.Choice(name="response_requirement", value="response"),])
+    async def set_quota(self, interaction:discord.Interaction, rank:discord.Role, activity_type:app_commands.Choice[str], new_amount:int=None):
+        return await interaction.response.send_message(embed=embedBuilder("Warning", embedDesc="This command isn't done yet.",embedTitle="No worki yeti"), ephemeral=True)
+    
+    @app_commands.command(name="overview",description="View all set quotas for all ranks.")
+    async def viewquota(self, interaction:discord.Interaction):
+        return await interaction.response.send_message(embed=embedBuilder("Warning", embedDesc="This command isn't done yet.",embedTitle="No worki yeti"), ephemeral=True)
+        # Will work on after some sleep but needs a DB integration
+    '''
+    @app_commands.command(name="block",description="Updates the quota block data. [TRUPC+]")
+    @app_commands.describe(block="Enter a block number 7 through 26.", action="View: See info about a specific block. || Change: Set a new active block. || List: See a list of all pre-set blocks.")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="view", value="view"),
+        app_commands.Choice(name="change", value="change"),
+        app_commands.Choice(name="list_all", value="list"),
+        ])
+    async def updatequota(self, interaction:discord.Interaction, action:app_commands.Choice[str], block:int=None):
+        if not TRULEAD(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL))
+        all_blockdata, rows = get_all_quota_data()
+        if rows == 0:
+                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota block data found!", description="There are no quota blocks in the database.", color=ErrorCOL))
+        if action.value == "list":
+            msg = f"I found data on {rows} block!\n\n" if rows == 1 else f"I found data on {rows} blocks!\n\n"
+            for data in all_blockdata:
+                msg += f"**Block {data[0]}** // Active: {bool(data[3])}\n<t:{data[1]}> - <t:{data[2]}>\n\n"
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotInformation:1093651827234443266> List of Quota Blocks", description=msg, color=HRCommandsCOL), ephemeral=True)
+        if not block:
+            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No block found!", description="Please enter a block's number to view or activate it.", color=ErrorCOL))
+        blockdata = get_quota()
+        req_blockdata = get_quota(block_num=block)
+        if req_blockdata:
+            if action.value == "view":
+                return await interaction.response.send_message(embed = discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotInformation:1093651827234443266> Quota Block {req_blockdata[0]}", description=f"**Start Date:** <t:{req_blockdata[1]}:F>\n**End Date:** <t:{req_blockdata[2]}:F>\n**Active:** {bool(req_blockdata[3])}"), ephemeral=True)
+            elif action.value == "change":
+                if blockdata: # Check if there is an active block
+                    if block == blockdata[0]: # Given block is already active
+                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:trubotWarning:1099642918974783519> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
+                    else: # If there was an active block but it is now changed
+                        set_active_block(block_num=block)
+                        new_blockdata = get_quota()
+                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
+                else: # There is now an active quota block
+                    set_active_block(block_num=block)
+                    new_blockdata = get_quota()
+                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
+        else:
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
+'''
 
+    @app_commands.command(name="modify",description="Updates the quota block data. [TRUPC+]")
+    @app_commands.describe(new_amount="Set the new quota requiremnt here if it is being changed.", action="View: See the current quota. || log_amount: Set the log quota. || attendance_amount: Set the attendance quota. || toggle: Enable/disable the quota. (Quota=0)")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="view", value="view"),
+        app_commands.Choice(name="log_amount", value="logs"),
+        app_commands.Choice(name="attendance_amount", value="attendance"),
+        app_commands.Choice(name="toggle", value="toggle"),
+        ])
+    async def modify_quota(self, interaction:discord.Interaction, action:app_commands.Choice[str], new_amount:int=None):
+        return await interaction.response.send_message(embed=embedBuilder("Warning", embedDesc="This command isn't done yet.",embedTitle="No worki yeti"), ephemeral=True)
+        # Will work on after some sleep but needs a DB integration
 
