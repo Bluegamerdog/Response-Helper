@@ -26,13 +26,15 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             operativeResponse, operativeResponseBool = await dbFuncs.fetch_operative(interaction)
+            if operativeResponse.activeLog == True:
+                return await interaction.response.send_message(embed=discord.Embed(title="<:trubotDenied:1099642433588965447> Process failed!", description="You still have an on-going log.", color=ErrorCOL))      
+                      
             if operativeResponseBool:
                 date_time = datetime.datetime.now()
                 unixTime = int(time.mktime(date_time.timetuple()))
                 dbResponse, dbResponseBool = await dbFuncs.prismaCreatelog(interaction, str(unixTime))
                 if dbResponseBool == True:
-                    successEmbed = embedBuilder("Success", embedTitle="Log successful started! ", embedDesc=("Log started at: <t:" + str(unixTime) + ":f>"))
-                    print(successEmbed)
+                    successEmbed = embedBuilder("Success", embedTitle="<:trubotAccepted:1096225940578766968> Log successfully started!", embedDesc=("Start time: <t:" + str(unixTime) + ":t>"))
                     await interaction.response.send_message(embed=successEmbed)
                 else:
                     errorEmbed = embedBuilder("Error", embedTitle="An error occurred.", embedDesc="Error details: " + str(dbResponse))
@@ -54,7 +56,7 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
     async def endlog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction)
         op, opResponse = await fetch_operative(interaction)
-        if not checkPermission(interaction.user.top_role, serverConfig.logPermissionRole):
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             errEmbed = embedBuilder("Error", embedTitle="Permission error:",
                                     embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
             await interaction.response.send_message(embed=errEmbed)
@@ -87,7 +89,7 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
     @app_commands.command(name="cancel", description="Cancel current log.")
     async def cancellog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction)
-        if not checkPermission(interaction.user.top_role, serverConfig.logPermissionRole):
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             errEmbed = embedBuilder("Error", embedTitle="Permission error:",
                                     embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
             await interaction.response.send_message(embed=errEmbed)

@@ -31,3 +31,15 @@ def change_nickname(new_rank_name, current_nick):
     new_nick = f"{rank_abbreviations.get(new_rank_name, 'Unknown')} {username}"
     return new_nick
 
+
+async def getHighestRole(discordUser: discord.Member):
+    roles = discordUser.roles
+    roles.sort(reverse=True, key=lambda r: r.position)  # Sort roles in descending order of position
+
+    for role in roles:
+        if role.name != "TRU Excused":
+            return role.name
+
+    return ""  # Return an empty string if no valid role is found
+
+
