@@ -1,6 +1,6 @@
 import re
 from Functions.mainVariables import *
-from Functions.permFunctions import *
+from Functions.rolecheckFunctions import *
 from discord.ext import commands
 
 # If we have any random function they can go here?

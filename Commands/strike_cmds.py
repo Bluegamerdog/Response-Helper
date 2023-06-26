@@ -4,7 +4,7 @@ import sys
 import datetime
 import random
 from Functions.mainVariables import *
-from Functions.permFunctions import *
+from Functions.rolecheckFunctions import *
 from Functions.formattingFunctions import embedBuilder
 from Functions.randFunctions import (get_user_id_from_link, in_roblox_group, change_nickname)
 #from Database_Functions.UserdbFunction import (db_register_get_data)

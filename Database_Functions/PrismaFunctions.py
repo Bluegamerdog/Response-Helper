@@ -21,28 +21,61 @@ async def prismaFunc():
 
 """
 
-# Need to start moving these into their own files (pls)
+## Quota Blocks
 
-async def updateUser(interaction: discord.Interaction, discordID: int, profileLink: str, name: str):
-    try:
-        db = Prisma()
-        await db.connect()
+# Function to get all quota block data
+async def get_all_quota_data():
+    db = Prisma()
+    await db.connect()
+    quotadata = await db.quota_blocks.find_many()
+    await db.disconnect()
+    return quotadata
 
-        User = await db.operative.update(where={'discordID': str(interaction.user.id)},
-                                         data={
-            'discordID': str(discordID),
-            'profileLink': profileLink,
-            'userName': name,
-            'rank': str(interaction.user.top_role.name),
-        })
+# Function to get quota block data by block number
+async def get_quotablock(block_num=None):
+    db = Prisma()
+    await db.connect()
+    if block_num is not None:
+        quotaBlock =  await db.quota_blocks.find_unique(where={"blockNum": block_num})
+    else:
+        quotaBlock = await db.quota_blocks.find_first(where={"blockActive": True})
+    await db.disconnect()
+    return quotaBlock
 
-        await db.disconnect()
-        return True
-    except Exception as e:
-        return e
+# Function to set the active quota block by block number
+async def set_active_block(block_num):
+    db = Prisma()
+    await db.connect()
+    await db.quota_blocks.update_many(
+        where={"blockActive": True},
+        data={"blockActive": False}
+    )
+    await db.quota_blocks.update(
+        where={"blockNum": block_num},
+        data={"blockActive": True}
+    )
+    await db.disconnect()
+    return
+
+# Function to insert quota block data
+async def insert_quota_data(block_num, unix_starttime, unix_endtime, block_active):
+    return await Prisma().quota_blocks.create({
+        "blockNum": block_num,
+        "unix_starttime": unix_starttime,
+        "unix_endtime": unix_endtime,
+        "blockActive": block_active
+    })
+
+
+
+
+
+
+
+
  
 
-async def registerUser(discordUser:discord.Member, profileLink: str, name: str):
+async def registerOperator(discordUser:discord.Member, profileLink: str, name: str):
     try:
         db = Prisma()
         await db.connect()
@@ -66,30 +99,33 @@ async def registerUser(discordUser:discord.Member, profileLink: str, name: str):
             return False
     except Exception as e:
         return str(e)
-    
-    
-async def updateOperative(discordUser: discord.Member, profileLink: str = None, name: str = None): # Help :sob:
+        
+async def updateOperator(discordUser: discord.Member, profileLink: str, name: str):
     try:
         db = Prisma()
         await db.connect()
 
-        operative = await db.operative.find_unique(where={'discordID': str(discordUser.id)})
-        if operative is not None:
-            update_data = {}
-            if profileLink:
-                update_data['profileLink'] = profileLink
-            if name:
-                update_data['userName'] = name
-            updated_operative = await db.operative.update(where={'discordID': str(discordUser.id)}, data=update_data)
+        highest_role = await getHighestRole(discordUser)
+
+        operative = await db.operative.find_unique(where={'discordID' :str(discordUser.id)})
+        if operative:
+            updated_operative = await db.operative.update(
+                where={"discordID": str(discordUser.id)},
+                data={
+                    "userName": name,
+                    "rank": str(highest_role),
+                    "profileLink": profileLink,
+                },
+            )
             await db.disconnect()
-            return True
+            return updated_operative
         else:
             await db.disconnect()
-            return f"No operative found with Discord ID: {discordUser.id}"
+            return operative
     except Exception as e:
         return str(e)
 
-async def updateOperative_rank(discordUser: discord.Member, new_rank:str):
+async def updateOperator_rank(discordUser: discord.Member, new_rank:str):
     try:
         db = Prisma()
         await db.connect()
@@ -99,7 +135,7 @@ async def updateOperative_rank(discordUser: discord.Member, new_rank:str):
     except Exception as e:
         return str(e)
 
-async def removeOperative(operativeID: int):
+async def removeOperator(operativeID: int):
     try:
         db = Prisma()
         await db.connect()
@@ -117,8 +153,7 @@ async def removeOperative(operativeID: int):
         await db.disconnect()
         return str(e)
 
-
-async def viewOperative(operativeID:int):
+async def getOperator(operativeID:int):
     try:
         db = Prisma()
         await db.connect()
@@ -128,32 +163,8 @@ async def viewOperative(operativeID:int):
     except Exception as e:
         return str(e)
 
+## LOGS
 
-
-"""
-await prisma.logs.create({
-                data: {
-                    logID: id.toString(),
-                    timeStarted: logStart.toString(),
-                    timeEnded: "NULL",
-                    timeElapsed: "NULL",
-                    operativeName: splitUser(nickname)
-                }
-            })
-await prisma.operative.update({
-    where: {
-        discordID: interaction.user.id
-    },
-    data: {
-        logs: {
-            connect: {
-                logID: id.toString()
-            }
-        },
-        activeLog: true
-    }
-})
-"""
 async def checkLog(interaction: discord.Interaction):
     db = Prisma()
     await db.connect()
@@ -164,6 +175,7 @@ async def checkLog(interaction: discord.Interaction):
         return "No log is currently started!", False
     else:
         return log, True
+    
 async def prismaCancelLog(interaction: discord.Interaction):
     try:
         db = Prisma()
@@ -184,7 +196,6 @@ async def prismaCancelLog(interaction: discord.Interaction):
         return log, True
     except Exception as e:
         return e, False
-
 
 async def prismaEndLog(interaction: discord.Interaction, unixTime: str):
     try:
@@ -214,7 +225,6 @@ async def prismaEndLog(interaction: discord.Interaction, unixTime: str):
     except Exception as e:
         return str(e), False
 
-
 async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
     try:
         log_id = str(uuid.uuid4())[:8]
@@ -243,16 +253,15 @@ async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
     except Exception as e:
         return e, False
 
-async def removeUser(discordID: int, interaction: discord.Interaction):
-    try:
-        db = Prisma()
-        await db.connect()
-        object = await db.operative.delete(where={'discordID': discordID})
-        return object
+async def getallLogs(member:discord.Member):
+    db = Prisma()
+    await db.connect()
+    logdata = await db.logs.find_many(where={"operativeDiscordID": f"{member.id}"})
+    await db.disconnect()
+    return logdata
+    
 
-    except Exception as e:
-        return e
-
+## ROLEBINDS
 
 async def createBinding(discordRole:discord.Role, robloxID:int, interaction: discord.Interaction):
     db = Prisma()
@@ -293,7 +302,6 @@ async def fetch_rolebind(robloxID:int = None, discordRole:discord.Role = None, r
     except Exception as e:
         return e
 
-
 async def deleteBinding(discordRole:discord.Role):
     db = Prisma()
     await db.connect()
@@ -308,7 +316,6 @@ async def deleteBinding(discordRole:discord.Role):
     except Exception as e:
         return e
 
-
 async def get_all_role_bindings():
     db = Prisma()
     await db.connect()
@@ -316,6 +323,8 @@ async def get_all_role_bindings():
     await db.disconnect()
     return roles
 
+
+# SERVERCONFIG
 
 async def fetch_config(interaction: discord.Interaction):
     db = Prisma()
@@ -329,32 +338,17 @@ async def fetch_config(interaction: discord.Interaction):
     except Exception as e:
         return e
 
+  
+# ---
 
-async def fetch_operative(interaction: discord.Interaction):
-    try:
-        db = Prisma()
-        await db.connect()
-        operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
-        if operative is not None:
-            return operative, True
-        else:
-            return "No operative found!", False
-
-    except Exception as e:
-        return e, False
-
-async def findRole(discordRole: discord.role):
+async def clear_table(table_name):
     db = Prisma()
     await db.connect()
-
     try:
-
-
-        return
-
+        # Delete all records in the specified table
+        await db.execute_raw(f'DELETE FROM "{table_name}";')
+        await db.disconnect()
+        return True
     except Exception as e:
         return e
-    
-    
-
 

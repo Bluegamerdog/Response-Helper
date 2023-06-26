@@ -1,6 +1,6 @@
 import discord
-import requests
 import subprocess
+import datetime
 
 BasiccommandCOL = 0xFFFFFF
 TRUCommandCOL = 0x8e0000
@@ -18,40 +18,57 @@ YellowCOL = 0xb89715
 
 def get_git_revision_short_hash() -> str:
     return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
-def embedBuilder(embedType: str, embedDesc: str, embedTitle: str):
 
-    match embedType:
-        case "Error":
-            embed = discord.Embed(
+
+def embedBuilder(responseType: str, embedDesc: str = None, embedTitle: str = None, embedColor: any = None, ):
+
+    match responseType:
+        case "cust":
+            customEmbed = discord.Embed(
                 title=embedTitle,
-                description=embedDesc,
-                color=ErrorCOL
+                description = embedDesc,
+                color = embedColor,
             )
-            embed.set_footer(text="TRU Helper In-Dev Ver: " + get_git_revision_short_hash())
-            #embed.set_footer(response.json()["name"])
-            return embed
+            customEmbed.set_footer(text=f'InDev TRU Bot • {get_git_revision_short_hash()} | Today at {datetime.datetime.now().strftime("%#I:%M %p")}')
+            return customEmbed
+        
+        case "perms":
+            permerrEmbed = discord.Embed(
+                title="<:trubotDenied:1099642433588965447> Permission Error!",
+                description=embedDesc,
+                color=DarkRedCOL,
+            )
+            permerrEmbed.set_footer(text=f'InDev TRU Bot • {get_git_revision_short_hash()} | Today at {datetime.datetime.now().strftime("%#I:%M %p")}')
+            return permerrEmbed
+        
+        case "err":
+            errEmbed = discord.Embed(
+                title=f"<:trubotWarning:1099642918974783519> Error | {embedTitle}" if embedTitle else "<:trubotWarning:1099642918974783519> Error!",
+                description=embedDesc,
+                color=ErrorCOL,
+            )
+            errEmbed.set_footer(text=f'InDev TRU Bot • {get_git_revision_short_hash()} | Today at {datetime.datetime.now().strftime("%#I:%M %p")}')
+            return errEmbed
 
-        case "Success":
-            embed = discord.Embed(
-                title=embedTitle,
+        case "succ":
+            succEmbed = discord.Embed(
+                title=f"<:trubotAccepted:1096225940578766968> Success | {embedTitle}" if embedTitle else "<:trubotAccepted:1096225940578766968> Success!",
                 description=embedDesc,
                 color=SuccessCOL
             )
-            #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
-            #embed.set_footer(response.json()["name"])
-            embed.set_footer(text="TRU Helper In-Dev Ver: " + get_git_revision_short_hash())
-            return embed
+            succEmbed.set_footer(text=f'InDev TRU Bot • {get_git_revision_short_hash()} | Today at {datetime.datetime.now().strftime("%#I:%M %p")}')
+            return succEmbed
 
-        case "Warning":
-            embed = discord.Embed(
-                title=embedTitle,
+        case "warn":
+            warnEmbed = discord.Embed(
+                title=f"<:trubotWarning:1099642918974783519> Warning | {embedTitle}" if embedTitle else "<:trubotWarning:1099642918974783519> Warning!",
                 description=embedDesc,
                 color=YellowCOL
             )
-            #response = requests.get("https://api.github.com/Bluegamerdog/TRU-Helper-InDev")
-            #embed.set_footer(response.json()["name"])
-            embed.set_footer(text="TRU Helper In-Dev Ver: " + get_git_revision_short_hash())
-            return embed
+            warnEmbed.set_footer(text=f'InDev TRU Bot • {get_git_revision_short_hash()} | Today at {datetime.datetime.now().strftime("%#I:%M %p")}')
+            return warnEmbed
+        
+        
         case other:
             print("No valid Embed Type passed.")
 

@@ -22,6 +22,20 @@ model operative {
   response    response[]
 }
 
+model quotas {
+  rankName            String     @id @unique
+  logRequirement      String     
+  responseRequirement String
+  quotaActive         Boolean     
+}
+
+model quota_blocks {
+  blockNum            String     @id @unique
+  unix_starttime      String     
+  unix_endtime        String
+  blockActive         Boolean     
+}
+
 model response {
   //use discord message ID of the announcement as unique identifier (saves time :steamhappy:)
   responseID         String        @id @unique

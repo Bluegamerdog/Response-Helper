@@ -170,7 +170,7 @@ def get_devaccess_members():
 
 ## OTHER ##
 
-def set_days_onloa(discord_id, length):
+def set_days_userOnLoA(discord_id, length):
     conn, cur = userget_conn()
     result = db_register_get_data(discord_id)
     if result:

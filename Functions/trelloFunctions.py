@@ -6,8 +6,11 @@ TRELLO_API_KEY = "611905fd240d63a804e36a4fe7c9654e"
 TOKEN = "ATTA69143a1d63dd6eebe2b03a5715125045652f744b225c8f2fe7fe140e728a08c24D72615E"
 
 trello = TrelloClient(api_key=TRELLO_API_KEY, token=TOKEN)
-boardid = "6437e2978421d13cd9394a5d"
-response_trello = trello.get_board(boardid)
+responseBoardID = "6437e2978421d13cd9394a5d"
+memberactivityBoardID = "643c638f797233341d30294f"
+
+response_trello = trello.get_board(responseBoardID)
+memberactivityBoard = trello.get_board(memberactivityBoardID)
 
 def get_trello_id(discord_id):
     data = {
@@ -47,18 +50,21 @@ def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
         listID = "6437e2b7f6426e174d655d06"
         
     trellolist = trello.get_list(listID)
+    host = get_trello_id(ringleader_id)
         
     due_date_str = due_date_datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     newCard = trellolist.add_card(name=f"{type} Response", due=due_date_str)
-    ringleader = trello.get_member(get_trello_id(ringleader_id))
-    newCard.add_member(ringleader)
+    if host:
+        ringleader = trello.get_member(get_trello_id(ringleader_id))
+        newCard.add_member(ringleader)
+    
     
     if spontaneus: 
         label_id = "6437e2974720c87ca4fe3e98" # SPON LABEL 6437e2974720c87ca4fe3e98
     else:
         label_id = "6437eb47965e94c2c8cb2eb3" # SCHED LABEL
     
-    label = trello.get_label(label_id, boardid)
+    label = trello.get_label(label_id, responseBoardID)
     newCard.add_label(label)
         
     return newCard
@@ -86,9 +92,59 @@ def get_trello_card(card_id):
 def add_cancelled_label(card_id):
     try:
         trello_card = trello.get_card(card_id) 
-        cancelled_label = trello.get_label('6437e432cdf097cffdc2fda1', boardid)
+        cancelled_label = trello.get_label('6437e432cdf097cffdc2fda1', responseBoardID)
         trello_card.add_label(cancelled_label)
         return True
     except Exception as e:
         print(e)
         return False
+
+def get_card_comments(card_name):
+    
+    lists = memberactivityBoard.list_lists()
+    
+    # Iterate over lists
+    for trello_list in lists:
+        # Get all cards in the list
+        cards = trello_list.list_cards()
+        
+        # Iterate over cards
+        for card in cards:
+            if card.name == card_name:
+                # Get all comments on the card
+                comments = card.fetch_comments()
+                
+                return comments
+    
+    return None
+
+def get_total_comment_amount(comments):
+                    
+    # Count the number of comments
+    num_comments = len(comments)
+    
+    return num_comments
+
+
+def get_comments_timeframe(comments, unix_starttime, unix_endtime=None):
+    start_time = datetime.utcfromtimestamp(int(unix_starttime))
+    
+    # If endtime is provided, convert it to a datetime object
+    if unix_endtime is not None:
+        end_time = datetime.utcfromtimestamp(int(unix_endtime))
+    
+    num_comments = 0
+    
+    for comment in comments:
+        comment_time = datetime.strptime(comment['date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        
+        # Check if comment is within the specified time frame
+        if unix_endtime is not None:
+            if start_time <= comment_time <= end_time:
+                num_comments += 1
+        else:
+            if comment_time >= start_time:
+                num_comments += 1
+    
+    return num_comments
+
