@@ -24,25 +24,25 @@ class botCmds(commands.Cog):
     @app_commands.command(name="reload",description="Restarts the TRU Helper. [TRUPC+]")
     async def restart(self, interaction:discord.Interaction, commands:str=None):
         if not DEVACCESS(interaction.user):
-            return await interaction.response.send_message(embed=embedBuilder(title="<:dsbbotDeny:1073668785262833735> Missing permissions!", description="You must be a member of TRUPC or above to use the restart command.", color=ErrorCOL))
+            return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Bot Developers."))
         if commands != None:
-            await interaction.response.send_message(embed=embedBuilder(responseType="cust", embedColor=YellowCOL, embedTitle="<:trubotWarning:1099642918974783519> Syncing Commands..."))
+            await interaction.response.send_message(embed = embedBuilder(responseType="cust", embedColor=YellowCOL, embedTitle="<:trubotWarning:1099642918974783519> Syncing Commands..."))
             try:
                 await self.bot.tree.fetch_commands()
                 synced = await self.bot.tree.sync()
-                return await interaction.edit_original_response(embed=embedBuilder(responseType="cust", embedColor=DarkGreenCOL, embedTitle=f"<:trubotAccepted:1096225940578766968> Synced {len(synced)} commands!"))
+                return await interaction.edit_original_response(embed = embedBuilder(responseType="succ",embedTitle=f"Synced {len(synced)} commands!"))
             except Exception as e:
                 print(f"Error syncing commands: {e}")
-                return await interaction.edit_original_response(embed=embedBuilder(responseType="err", title=f"<:dsbbotFailed:953641818057216050> Syncing failed!", description=f"**Error:** {e}"))
+                return await interaction.edit_original_response(embed = embedBuilder(responseType="err", title=f"Syncing failed!", description=f"**Error:** {e}"))
         else:
-            await interaction.response.send_message(embed=embedBuilder(responseType="cust", embedColor=YellowCOL, embedTitle="<:trubotWarning:1099642918974783519> Restarting..."))
+            await interaction.response.send_message(embed = embedBuilder(responseType="warn",  embedTitle="Restarting..."))
             print(f"=========\nBot restarted by {interaction.user}\n=========")
             os.execv(sys.executable, ['python'] + sys.argv)
     
     @app_commands.command(name="shutdown", description="Shuts down TRU Helper. [DEVACCESS]")
     async def shutdown(self, interaction:discord.Interaction):
         if not DEVACCESS(interaction.user):
-            return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Bot Developers.", color=ErrorCOL))
+            return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Bot Developers."))
         else:
             embed = embedBuilder(responseType="cust", embedColor=ErrorCOL, embedTitle="<:trubotWarning:1099642918974783519> Shutting down...")
             await interaction.response.send_message(embed=embed)
@@ -79,11 +79,11 @@ class botCmds(commands.Cog):
                     results = await clear_table(table.value)
                     print(f"The table '{table.value}' has been cleared by {interaction.user}!")
                     if results == True:
-                        return await interaction.edit_original_response(embed = embedBuilder(responseType="cust", embedTitle=f"<:trubotAccepted:1096225940578766968> Database table `{table.name}` successfully cleared!", embedColor=DarkGreenCOL))
+                        return await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle=f"`{table.name}` was cleared!"))
                     else:
                         return await interaction.edit_original_response(embed= embedBuilder(responseType="err", embedTitle=f"Unable to clear `{table.name}`", embedDesc=f"{results}"))
         except Exception as e:
-            return await interaction.edit_original_response(embed=embedBuilder(title="<:trubotWarning:1099642918974783519> Error!", description=f"{e}", color=ErrorCOL))
+            return await interaction.edit_original_response(embed=embedBuilder(responseType="err", embedDesc=f"{e}"))
 
 
 class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
@@ -124,7 +124,7 @@ class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
                 })
             await db.disconnect()
 
-            embed = embedBuilder(embedType="Success", embedTitle="Success!",
+            embed = embedBuilder(responseType="succ",
                                  embedDesc="A configuration with the following details was made: ")
             embed.add_field(name="Response pings: ", value="<@&" + str(ping_role.id) + ">")
             embed.add_field(name="Member role: ", value="<@&" + str(logrole.id) + ">")
@@ -134,8 +134,8 @@ class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
             embed.add_field(name="TRU Helper Dev role: ", value="<@&" + str(developer_role.id) + ">")
             await interaction.response.send_message(embed=embed, ephemeral=False)
         else:
-            errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                    embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+            errEmbed = embedBuilder(responseType="perms",
+                                    embedDesc="This command is limited to Bot Developers.")
             await interaction.response.send_message(embed=errEmbed)
     
     @app_commands.command(name="edit", description="Edit bot permission settings")
@@ -170,7 +170,7 @@ class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
         await db.server.update(where={'serverID': str(interaction.guild.id)}, data=update_data)
         await db.disconnect()
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
-        embed = embedBuilder(embedType="Success", embedTitle="<:trubotAccepted:1096225940578766968> Successfully updated server configs!",
+        embed = embedBuilder(responseType="succ", embedTitle="Updated server configs!",
                             embedDesc=f"{interaction.guild.name}'s Server Configuration updated: ")
         if response_pings:
             embed.add_field(name="Response pings: ", value="<@&" + str(serverConfig.announceRole) + ">")
@@ -195,7 +195,7 @@ class serverconfigCmds(commands.GroupCog, group_name="serverconfigs"):
         await db.disconnect()
 
         if server_config:
-            embed = embedBuilder("succ", embedTitle=f"{interaction.guild.name} || Server Configurations", embedDesc=None)
+            embed = embedBuilder("cust", embedTitle=f"{interaction.guild.name} || Server Configurations", embedColor=TRUCommandCOL)
             embed.add_field(name="Response pings:", value=f"<@&{server_config.announceRole}>")
             embed.add_field(name="Member role:", value=f"<@&{server_config.logPermissionRole}>")
             embed.add_field(name="Response Leaders:", value=f"<@&{server_config.announcePermissionRole}>")
@@ -224,20 +224,20 @@ class rolebindCmds(commands.GroupCog, group_name="rolebind"):
                     new_bind = await dbFuncs.fetch_rolebind(discordRole=role)
                     if dbresponse == True and new_bind:
                         
-                        successEmbed = embedBuilder("succ", embedTitle="<:trubotAccepted:1096225940578766968> Successfully added rolebind!",
+                        successEmbed = embedBuilder("succ", embedTitle="Added rolebind!",
                                                     embedDesc=f"**➣ Rank Name: {new_bind.rankName}**\n> +Discord Role: {interaction.guild.get_role(int(new_bind.discordRoleID)).mention}\n> +roblox_client Rank ID: `{new_bind.RobloxRankID}`")
                         await interaction.response.send_message(embed=successEmbed)
                     else:
-                        errEmbed = embedBuilder("err", embedTitle="An error occured:",
+                        errEmbed = embedBuilder("err",
                                                 embedDesc="Error: " + str(dbresponse))
                         await interaction.response.send_message(embed=errEmbed)
                 except Exception as e:
-                    errEmbed = embedBuilder("err", embedTitle="An error occured:",
+                    errEmbed = embedBuilder("err",
                                             embedDesc="Error: " + str(e))
                     await interaction.response.send_message(embed=errEmbed, ephemeral=True)
             else:
-                errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                        embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+                errEmbed = embedBuilder("perms",
+                                        embedDesc="This command is limited to Bot Developers.")
                 await interaction.response.send_message(embed=errEmbed, ephemeral=True)
 
         except Exception as e:
@@ -254,25 +254,25 @@ class rolebindCmds(commands.GroupCog, group_name="rolebind"):
             requiredRole = interaction.guild.get_role(int(serverConfig.commandRole))
 
             if not rolecheckFunctions.checkPermission(interaction.user.top_role, requiredRole):
-                errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                        embedDesc="You are not: <@&" + str(requiredRole.id) + ">")
+                errEmbed = embedBuilder("perms",
+                                        embedDesc="This command is limited to Bot Developers.")
                 await interaction.response.send_message(embed=errEmbed, ephemeral=True)
                 return
 
             role = await fetch_rolebind(discordRole = discord_role)
             if not role:
-                errEmbed = embedBuilder("err", embedTitle="<:trubotDenied:1099642433588965447> No rolebind found!",
+                errEmbed = embedBuilder("err", embedTitle="No rolebind found!",
                                         embedDesc=f"No rolebind was found for {discord_role.mention}.")
                 await interaction.response.send_message(embed=errEmbed)
                 return
 
             await dbFuncs.deleteBinding(discord_role)
-            successEmbed = embedBuilder("succ", embedTitle="<:trubotAccepted:1096225940578766968> Rolebind successfully removed!",
+            successEmbed = embedBuilder("succ", embedTitle="Rolebind removed!",
                                         embedDesc=f"**➣ Rank Name: {role.rankName}**\n> -Discord Role: {interaction.guild.get_role(int(role.discordRoleID)).mention}\n> -roblox_client Rank ID: `{role.RobloxRankID}`")
             await interaction.response.send_message(embed=successEmbed)
 
         except Exception as e:
-            errEmbed = embedBuilder("err", embedDesc=str(e), embedTitle="An error occurred.")
+            errEmbed = embedBuilder("err", embedDesc=str(e))
             await interaction.response.send_message(embed=errEmbed, ephemeral=True)
 
 
@@ -289,5 +289,5 @@ class rolebindCmds(commands.GroupCog, group_name="rolebind"):
             else:
                 await interaction.response.send_message("No role bindings found.")
         except Exception as e:
-            errEmbed = embedBuilder("err", embedDesc=str(e), embedTitle="An error occurred.")
+            errEmbed = embedBuilder("err", embedDesc=str(e))
             await interaction.response.send_message(embed=errEmbed, ephemeral=True)

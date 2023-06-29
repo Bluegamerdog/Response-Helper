@@ -21,14 +21,37 @@ from prisma import Prisma
 class patrolCmds(commands.GroupCog, group_name="patrol"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        
+    @app_commands.command(name="delete", description="Delete a log by ID.")
+    async def deletelog(self, interaction: discord.Interaction, log_id: str):
+        if not DEVACCESS(interaction.user):
+            errEmbed = embedBuilder("perms", embedDesc="This command is limited to Bot Developers.")
+            await interaction.response.send_message(embed=errEmbed)
+            return
 
+        try:
+            db = Prisma()
+            await db.connect()
+            log = await db.logs.find_unique(where={'logID': log_id})
+            if log:
+                await db.logs.delete(where={'logID': log_id})
+                successEmbed = embedBuilder("succ", embedTitle="Log deleted!", embedDesc=f"A log with ID `{log_id}` has been deleted.")
+                await interaction.response.send_message(embed=successEmbed)
+            else:
+                errEmbed = embedBuilder("err", embedTitle="Log not found!", embedDesc="No log was found with the specified ID.")
+                await interaction.response.send_message(embed=errEmbed)
+        except Exception as e:
+            errEmbed = embedBuilder("err", embedTitle="Error!", embedDesc=str(e))
+            await interaction.response.send_message(embed=errEmbed)
+
+        
     @app_commands.command(name="start", description="Start a log.")
     async def startlog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction=interaction)
         if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
             requestedOperator = await getOperator(int(interaction.user.id))
             if requestedOperator.activeLog == True:
-                return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="Process failed", embedDesc="You still have an on-going log."))      
+                return await interaction.response.send_message(embed = embedBuilder(responseType="warn", embedTitle="Process denied!", embedDesc="You still have an on-going log."))      
                       
             if requestedOperator:
                 date_time = datetime.now()
@@ -48,71 +71,124 @@ class patrolCmds(commands.GroupCog, group_name="patrol"):
 
 
         else:
-            errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            errEmbed = embedBuilder("perms",
+                                    embedDesc="Only Operators and above may use this command.")
             await interaction.response.send_message(embed=errEmbed)
 
     @app_commands.command(name="end", description="End your current log.")
-    async def endlog(self, interaction: discord.Interaction):
+    async def endlog(self, interaction: discord.Interaction, proof_url:str = None, proof_img:discord.Attachment=None):
         serverConfig = await fetch_config(interaction)
-        op, opResponse = await getOperator(interaction)
+        requestedOperator = await getOperator(int(interaction.user.id))
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            errEmbed = embedBuilder("perms", embedDesc="Only Operators and above may use this command.")
             await interaction.response.send_message(embed=errEmbed)
             return
-        if not opResponse:
-            errEmbed = embedBuilder("err", embedTitle="Operative not found!",
-                                    embedDesc="Please make sure you are registered with the TRU bot before running commands!")
-            await interaction.response.send_message(embed=errEmbed)
-            return
-        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            date_time = datetime.datetime.now()
-            unixTime = int(time.mktime(date_time.timetuple()))
-            dbMessage, dbSuccess = await prismaEndLog(interaction, str(unixTime))
-            if dbSuccess:
-                successEmbed = embedBuilder("succ", embedTitle="Log ended successfully!", embedDesc="A log with the following details below was ended.")
-                successEmbed.add_field(name="Time ended: ", value= "<t:" + str(unixTime) + ":f>")
-                successEmbed.add_field(name="Log Time: ", value= str(dbMessage) + " minutes")
-                await interaction.response.send_message(embed=successEmbed)
-            else:
-                errorEmbed = embedBuilder("err", embedTitle="Unable to end log:", embedDesc="**Reason:** " + str(dbMessage))
-                await interaction.response.send_message(embed=errorEmbed)
+        if not requestedOperator:
+            errEmbed = embedBuilder("err", embedTitle="Operative not found!", embedDesc="Please make sure you/they are registered with the TRU bot before running commands!")
+            return await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+        proof = proof_url if proof_url else proof_img.url if proof_img else None
+        
+        if proof is None:
+            errEmbed = embedBuilder("err", embedTitle="No Proof Provided!", embedDesc="Please provide either a proof URL or an proof image.")
+            return await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+        date_time = datetime.now()
+        unixTime = int(time.mktime(date_time.timetuple()))
+        
+
+        dbMessage, dbSuccess = await prismaEndLog(interaction, str(unixTime), proof)
+
+        if dbSuccess:
+            successEmbed = embedBuilder("succ", embedTitle="Log ended!", embedDesc="Your patrol has successfully ended! *Thank you for patrolling!*")
+            await interaction.response.send_message(embed=successEmbed)
         else:
-            errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
-            await interaction.response.send_message(embed=errEmbed)
+            errorEmbed = embedBuilder("err", embedTitle="Unable to end log!", embedDesc="**Reason:** " + str(dbMessage))
+            await interaction.response.send_message(embed=errorEmbed, ephemeral=True)
 
     @app_commands.command(name="cancel", description="Cancel current log.")
     async def cancellog(self, interaction: discord.Interaction):
         serverConfig = await fetch_config(interaction)
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
-            errEmbed = embedBuilder("err", embedTitle="Permission error:",
-                                    embedDesc="You are not: <@&" + str(serverConfig.logPermissionRole) + ">")
+            errEmbed = embedBuilder("perms",
+                                    embedDesc="Only Operators and above may use this command.")
             return await interaction.response.send_message(embed=errEmbed)
             
         requestedOperator = await getOperator(int(interaction.user.id))
         log, logResponse = await checkLog(interaction)
         if not requestedOperator:
-            errEmbed = embedBuilder("err", embedTitle="Operative not found!",
+            errEmbed = embedBuilder("err", embedTitle="Operator not found!",
                                     embedDesc="Please make sure you are regsitered with the TRU bot before running commands!")
             await interaction.response.send_message(embed=errEmbed)
         if not logResponse:
             errEmbed = embedBuilder("err", embedTitle="Log not found!",
-                                    embedDesc="No active log was found under your operative id.")
+                                    embedDesc="No active log was found under your id.")
             await interaction.response.send_message(embed=errEmbed)
         if logResponse:
-            print("Found a log")
             await prismaCancelLog(interaction)
-            successEmbed = embedBuilder("err", embedTitle="Log cancelled.",
-                                        embedDesc="A log with the following details below was cancelled.")
-            successEmbed.add_field(name="Log ID: ", value=str(log.logID))
-            successEmbed.add_field(name="Log start time: ", value="<t:" + str(log.timeStarted) + ":f>")
+            successEmbed = embedBuilder("succ", embedTitle="Log cancelled!",
+                                        embedDesc="Successfully deleted your patrol!")
             await interaction.response.send_message(embed=successEmbed)
+            
+    
 
-    @app_commands.command(name="overview", description="Start a log.")
-    async def logoverview(self, interaction: discord.Interaction):
-        await interaction.response.send_message("Not done", ephemeral=True)
+    @app_commands.command(name="overview", description="See a specific or 10 of your most recent patrols.")
+    @app_commands.describe(operator="Which operator's logs? [TRUCapt+]", log_id = "The ID of the log to show info about.")
+    async def logoverview(self, interaction: discord.Interaction, operator:discord.Member = None, log_id:str = None):
+        serverConfig = await fetch_config(interaction)
+        if operator and not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
+            return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="Only TRU leadership and above may view the logs of others."), ephemeral=True)
+       
+        
+        if operator is None:
+            operator = interaction.user
+        requestedOperator = await getOperator(operator.id)
+        if not requestedOperator:
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="Operator not found...", embedDesc=f"{operator.mention} was not found in the database. Please double check that they are registered."))
+        
+        if log_id:
+            # Fetch information about a specific log
+            if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
+                log = await fetch_log_by_id(log_id)
+                acc = True
+            else:
+                log = await fetch_log_by_id_for_user(operator, log_id)
+                acc = False
+                
+            if log:
+                embed = embedBuilder("succ", embedTitle=f"Log found!")
+                if not log.timeEnded or str(log.timeEnded) == "Null":
+                    time_elapsed = (datetime.fromtimestamp(int(time.time())) - datetime.fromtimestamp(int(log.timeStarted))).total_seconds() // 60
+                    embed.add_field(name=f"Log `{log.logID}`", value=f"Started: <t:{log.timeStarted}>\nTime Elapsed: `{int(time_elapsed)} minutes`\nStatus: *In progress*")
+                elif not log.logProof or str(log.logProof) == "Null" or str(log.logProof) == "No proof provided":
+                    embed.add_field(name=f"Log `{log.logID}`", value=f"Started: <t:{log.timeStarted}>\nEnded: <t:{log.timeEnded}>\nLength: `{round(float(log.timeElapsed))} minutes`\nProof: *No proof provided*")
+                else:
+                    embed.add_field(name=f"Log `{log.logID}`", value=f"Started: <t:{log.timeStarted}>\nEnded: <t:{log.timeEnded}>\nLength: `{round(float(log.timeElapsed))} minutes`\nProof: [image]({log.logProof})")
+                return await interaction.response.send_message(embed=embed)
+            else:
+                if acc == True:
+                    return await interaction.response.send_message(embed = embedBuilder("err", embedTitle="No log found!", embedDesc=f"Could not find a patrol with id `{log_id}`."), ephemeral=True)
+                else:
+                    return await interaction.response.send_message(embed = embedBuilder("warn", embedTitle="No log found!", embedDesc=f"This is either the log id of another operator or I could not find a patrol with id `{log_id}`."), ephemeral=True)
+        
+        else:
+            # Fetch the last 5 logs for the specified operator
+            logs = await get_last_5_logs_for_user(operator.id)
+
+            if not logs:
+                return await interaction.response.send_message(embed = embedBuilder("warn", embedTitle="No logs found!", embedDesc=f"Could not find any patrols for {operator.mention}."), ephemeral=True)
+            else:
+                embed = embedBuilder("succ", embedTitle=f"Logs found!")
+                for log in logs:
+                    if not log.timeEnded or str(log.timeEnded) == "Null":
+                        time_elapsed = (datetime.fromtimestamp(int(time.time())) - datetime.fromtimestamp(int(log.timeStarted))).total_seconds() // 60
+                        embed.add_field(name=f"Log `{log.logID}`", value=f"Started: <t:{log.timeStarted}>\nTime Elapsed: `{int(time_elapsed)} minutes`\nStatus: *In progress*")
+                    elif not log.logProof or str(log.logProof) == "Null" or str(log.logProof) == "No proof provided":
+                        embed.add_field(name=f"Log `{log.logID}`", value=f"Started: <t:{log.timeStarted}>\nEnded: <t:{log.timeEnded}>\nLength: `{round(float(log.timeElapsed))} minutes`\nProof: *No proof provided*")
+                    else:
+                        embed.add_field(name=f"Log `{log.logID}`", value=f"Started: <t:{log.timeStarted}>\nEnded: <t:{log.timeEnded}>\nLength: `{round(float(log.timeElapsed))} minutes`\nProof: [image]({log.logProof})")
+                return await interaction.response.send_message(embed=embed)
+        
     
 class viewdataCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -126,25 +202,40 @@ class viewdataCommand(commands.Cog):
                 member = interaction.user
             
             requested_operator = await getOperator(member.id)
-            operator_logs = await getallLogs(member)
-            quotaBlock = await get_quotablock()
-            comments = get_card_comments(requested_operator.userName)
-            #operator_quota = getrankQuota
             
             if requested_operator is None:
-                return await interaction.edit_original_response(embed=embedBuilder("err", embedDesc=f"Unable to find userdata on {member.mention}. Maybe they aren't registered?", embedTitle="No data found!"))
+                return await interaction.edit_original_response(embed=embedBuilder("err", embedDesc=f"Unable to find userdata on {member.mention}. Maybe they aren't registered?", embedTitle="No user found!"))
+            
             else:
-                embed = embedBuilder("succ", embedTitle=f"<:trubotAccepted:1096225940578766968> User data found!", embedDesc=f"Displaying {member.mention}'s data for block **{quotaBlock.blockNum}**.")
+                operator_logs = await getallLogs(member)
+                quotaBlock = await get_quotablock()
+                comments = get_card_comments(requested_operator.userName)
+                operator_quota = await get_quota_by_rank(requested_operator.rank)
+                
+                embed = embedBuilder("succ", embedTitle=f"User found!", embedDesc=f"Displaying {member.mention}'s data for block **{quotaBlock.blockNum}**.")
                 embed.add_field(name="TRU Rank", value=f"> {requested_operator.rank}", inline=True)
-                embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if userOnLoA(member) else f"> Active Duty", inline=True)
+                embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if userOnLoA(member) else f"> On Active Duty", inline=True)
                 embed.add_field(name="", value="", inline=False) # Filler for 2x2 field config because discord
-                embed.add_field(name="Responses Attended", value=f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}", inline=True) # Need to add response attendance count
-                embed.add_field(name="Patrols Logged", value=f"> {len(operator_logs)}/Quota", inline=True) #(need to add something and be able to change quota at will)
+                embed.add_field(name="Responses Attended",
+                                value=f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}/{operator_quota.responseRequirement}"
+                                if operator_quota and (operator_quota.responseRequirement and operator_quota.quotaActive is True and str(operator_quota.responseRequirement) != "None")
+                                and userOnLoA(member) is False
+                                else f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}",
+                                inline=True)
+
+                embed.add_field(name="Patrols Logged",
+                                value=f"> {len(operator_logs)}/{operator_quota.logRequirement}"
+                                if operator_quota and (operator_quota.logRequirement and operator_quota.quotaActive is True and str(operator_quota.logRequirement) != "None")
+                                and userOnLoA(member) is False
+                                else f"> {len(operator_logs)}",
+                                inline=True)
+
                 return await interaction.edit_original_response(embed=embed)
         except Exception as e:
             errEmbed = embedBuilder("err", embedDesc=str(e), embedTitle="An error occurred.")
-            return await interaction.edit_original_response(embed=errEmbed, ephemeral=True)
+            return await interaction.edit_original_response(embed=errEmbed)
                 
+
 
 class quotaCmds(commands.GroupCog, group_name='quota'):
     def __init__(self, bot: commands.Bot):
@@ -159,80 +250,111 @@ class quotaCmds(commands.GroupCog, group_name='quota'):
 
         rank_name = rank.name
         db = Prisma()
-        # Retrieve the existing quota data for the specified rank
-        existing_quota = await db.quotas.find_unique(where={"rankName": rank_name})
-
-        if existing_quota is None:
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No quota found", embedDesc=f"No quota data found for the rank {rank.name}."), ephemeral=True)
 
         # Update the quota data with the provided values
         new_quota_data = {}
         if patrol_req is not None:
             new_quota_data["logRequirement"] = str(patrol_req)
+        else:
+            new_quota_data["logRequirement"] = None
         if response_req is not None:
             new_quota_data["responseRequirement"] = str(response_req)
+        else:
+            new_quota_data["responseRequirement"] = None
         if quota_active is not None:
             new_quota_data["quotaActive"] = quota_active
-
-        updated_quota = await db.quotas.update(where={"rankName": rank_name}, data=new_quota_data)
-
-        return await interaction.response.send_message(embed=embedBuilder(responseType="succ", embedTitle="Quota Updated", embedDesc=f"The quota requirements for the rank {rank.name} have been updated successfully."), ephemeral=True)
-    
-    @app_commands.command(name="overview",description="View all set quotas for all ranks.")
-    async def viewquota(self, interaction:discord.Interaction):
-        return await interaction.response.send_message(embed=embedBuilder("warn", embedDesc="This command isn't done yet.", embedTitle="No worki yeti"), ephemeral=True)
-        # Will work on after some sleep but needs a DB integration
-    '''
-    @app_commands.command(name="block",description="Updates the quota block data. [TRUPC+]")
-    @app_commands.describe(block="Enter a block number 7 through 26.", action="View: See info about a specific block. || Change: Set a new active block. || List: See a list of all pre-set blocks.")
-    @app_commands.choices(action=[
-        app_commands.Choice(name="view", value="view"),
-        app_commands.Choice(name="change", value="change"),
-        app_commands.Choice(name="list_all", value="list"),
-        ])
-    async def updatequota(self, interaction:discord.Interaction, action:app_commands.Choice[str], block:int=None):
-        if not TRULEAD(interaction.user):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of TRUPC or above to use this command.", color=ErrorCOL))
-        all_blockdata, rows = get_all_quota_data()
-        if rows == 0:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota block data found!", description="There are no quota blocks in the database.", color=ErrorCOL))
-        if action.value == "list":
-            msg = f"I found data on {rows} block!\n\n" if rows == 1 else f"I found data on {rows} blocks!\n\n"
-            for data in all_blockdata:
-                msg += f"**Block {data[0]}** // Active: {bool(data[3])}\n<t:{data[1]}> - <t:{data[2]}>\n\n"
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotInformation:1093651827234443266> List of Quota Blocks", description=msg, color=HRCommandsCOL), ephemeral=True)
-        if not block:
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No block found!", description="Please enter a block's number to view or activate it.", color=ErrorCOL))
-        blockdata = get_quota()
-        req_blockdata = get_quota(block_num=block)
-        if req_blockdata:
-            if action.value == "view":
-                return await interaction.response.send_message(embed = discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotInformation:1093651827234443266> Quota Block {req_blockdata[0]}", description=f"**Start Date:** <t:{req_blockdata[1]}:F>\n**End Date:** <t:{req_blockdata[2]}:F>\n**Active:** {bool(req_blockdata[3])}"), ephemeral=True)
-            elif action.value == "change":
-                if blockdata: # Check if there is an active block
-                    if block == blockdata[0]: # Given block is already active
-                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:trubotWarning:1099642918974783519> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
-                    else: # If there was an active block but it is now changed
-                        set_active_block(block_num=block)
-                        new_blockdata = get_quota()
-                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
-                else: # There is now an active quota block
-                    set_active_block(block_num=block)
-                    new_blockdata = get_quota()
-                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:trubotAccepted:1096225940578766968> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
         else:
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
-'''
+            new_quota_data["quotaActive"] = None
 
-    @app_commands.command(name="modify",description="Updates the quota block data. [TRUPC+]")
-    @app_commands.describe(new_amount="Set the new quota requiremnt here if it is being changed.", action="View: See the current quota. || log_amount: Set the log quota. || attendance_amount: Set the attendance quota. || toggle: Enable/disable the quota. (Quota=0)")
-    @app_commands.choices(action=[
-        app_commands.Choice(name="view", value="view"),
-        app_commands.Choice(name="log_amount", value="logs"),
-        app_commands.Choice(name="attendance_amount", value="attendance"),
-        app_commands.Choice(name="toggle", value="toggle"),
-        ])
-    async def modify_quota(self, interaction:discord.Interaction, action:app_commands.Choice[str], new_amount:int=None):
-        return await interaction.response.send_message(embed=embedBuilder("warn", embedDesc="This command isn't done yet.",embedTitle="No worki yeti"), ephemeral=True)
-        # Will work on after some sleep but needs a DB integration
+        updated_quota = await upsert_quota(rank_name, new_quota_data)
+
+        return await interaction.response.send_message(embed=embedBuilder(responseType="succ", embedTitle="Quota Updated!", embedDesc=f"The quota requirements for the rank {rank.name} have been updated successfully."), ephemeral=True)
+    
+    @app_commands.command(name="overview", description="View all set quotas for all ranks.")
+    async def viewquota(self, interaction: discord.Interaction, rank:discord.Role=None):
+        try:
+            if rank:
+                quotas = await get_quota_by_rank(rank.name)
+                quotas = [quotas] if quotas else []
+            else:
+                quotas = await get_all_quotas()
+
+            if len(quotas) > 0:
+                quota_list = embedBuilder(responseType="cust", embedTitle="TRU Quotas", embedColor=TRUCommandCOL)
+                for quota in quotas:
+                    if quota.quotaActive == True:
+                        active = "Active"
+                    else:
+                        active = "Inactive"
+                    quota_list.add_field(name=f"➣ {quota.rankName} | {active}", value=f"> Log Requirement: {quota.logRequirement}\n> Response Requirement: {quota.responseRequirement}", inline=False)
+                await interaction.response.send_message(embed=quota_list, ephemeral=True)
+            else:
+                await interaction.response.send_message(embed = embedBuilder("warn", embedTitle="Quota not set!", embedDesc=f"Unable to find a quota for {rank.mention}." if rank else "No quotas were found in the database."), ephemeral=True)
+        except Exception as e:
+            errEmbed = embedBuilder(responseType="err", embedDesc=str(e))
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+            
+    @app_commands.command(name="delete", description="Delete a quota for a specified rank.")
+    async def delete_quota(self, interaction: discord.Interaction, rank: discord.Role):
+        serverConfig = await fetch_config(interaction)
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
+            return await interaction.response.send_message(embed=embedBuilder(responseType="perms", embedDesc="Only TRU leadership and above may use this command."), ephemeral=True)
+
+        rank_name = rank.name
+        deleted_quota = await delete_quota(rank_name)
+
+        if deleted_quota is not None:
+            return await interaction.response.send_message(embed=embedBuilder(responseType="succ", embedTitle="Quota Deleted!", embedDesc=f"The quota for the rank {rank_name} has been deleted successfully."), ephemeral=True)
+        else:
+            return await interaction.response.send_message(embed=embedBuilder(responseType="err", embedTitle="Quota Not Found!", embedDesc=f"No quota found for the rank {rank_name}."), ephemeral=True)
+
+
+class quotablockCommands(commands.GroupCog, group_name='quotablock'):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @app_commands.command(name="setactive", description="Set the active quota block by block number.")
+    async def set_active_block(self, interaction: discord.Interaction, block_num: int):
+        serverConfig = await fetch_config(interaction)
+        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
+            return await interaction.response.send_message(embed=embedBuilder(responseType="perms", embedDesc="Only TRU leadership and above may use this command."), ephemeral=True)
+
+        await set_active_block(block_num)
+        return await interaction.response.send_message(embed=embedBuilder(responseType="succ", embedTitle="Active Quota Block Updated!", embedDesc=f"The active quota block has been updated to block number {block_num}."), ephemeral=True)
+
+    @app_commands.command(name="overview", description="View all quota blocks.")
+    async def view_quota_blocks(self, interaction: discord.Interaction):
+        try:
+            quota_blocks = await get_all_quota_data()
+
+            if len(quota_blocks) > 0:
+                quota_blocks_list = embedBuilder(responseType="cust", embedTitle="TRU Quota Blocks", embedColor=TRUCommandCOL)
+                for block in quota_blocks:
+                    block_active = "Active" if block.blockActive else "Inactive"
+                    quota_blocks_list.add_field(name=f"➣ Block Number {block.blockNum} | Active" if block.blockActive is True else f"➣ Block Number {block.blockNum}", value=f"<t:{block.unix_starttime}> - <t:{block.unix_endtime}>", inline=False)
+                await interaction.response.send_message(embed=quota_blocks_list, ephemeral=True)
+            else:
+                await interaction.response.send_message(embed=embedBuilder("warn", embedTitle="No Quota Blocks Found!", embedDesc="No quota blocks were found in the database."), ephemeral=True)
+        except Exception as e:
+            errEmbed = embedBuilder(responseType="err", embedDesc=str(e))
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+    @app_commands.command(name="get", description="Get a specific of the active quota block.")
+    @app_commands.describe(block="Blocks 1-17 are available.")
+    async def get_active_block(self, interaction: discord.Interaction, block:int=None):
+        try:
+            active_block = await get_quotablock(block_num=block)
+            if active_block:
+                active_block_info = embedBuilder(responseType="succ", embedTitle="Quota Block found!")
+                block_active = "Active" if active_block.blockActive else "Inactive"
+                active_block_info.add_field(name=f"➣ Block Number {active_block.blockNum} | {block_active}", value=f"<t:{active_block.unix_starttime}> - <t:{active_block.unix_endtime}>", inline=False)
+                await interaction.response.send_message(embed=active_block_info, ephemeral=True)
+            else:
+                await interaction.response.send_message(embed=embedBuilder("warn", embedTitle="No data found!", embedDesc="Your requested quota block was not found in the database."), ephemeral=True)
+        except Exception as e:
+            errEmbed = embedBuilder(responseType="err", embedDesc=str(e))
+            await interaction.response.send_message(embed=errEmbed, ephemeral=True)
+
+
+
 

@@ -36,7 +36,7 @@ async def get_quotablock(block_num=None):
     db = Prisma()
     await db.connect()
     if block_num is not None:
-        quotaBlock =  await db.quota_blocks.find_unique(where={"blockNum": block_num})
+        quotaBlock =  await db.quota_blocks.find_unique(where={"blockNum": str(block_num)})
     else:
         quotaBlock = await db.quota_blocks.find_first(where={"blockActive": True})
     await db.disconnect()
@@ -65,6 +65,50 @@ async def insert_quota_data(block_num, unix_starttime, unix_endtime, block_activ
         "unix_endtime": unix_endtime,
         "blockActive": block_active
     })
+
+
+
+# QUOTA
+async def upsert_quota(rank_name, new_quota_data):
+    db = Prisma()
+    await db.connect()
+
+    existing_quota = await db.quotas.find_unique(where={"rankName": rank_name})
+
+    if existing_quota:
+        updated_quota = await db.quotas.update(where={"rankName": rank_name}, data=new_quota_data)
+        await db.disconnect()
+        return updated_quota
+    else:
+        new_quota_data["rankName"] = rank_name  # Add the missing rankName field
+        new_quota_data_with_none = {k: v if v is not None else "None" for k, v in new_quota_data.items()}  # Set missing values as "None"
+        inserted_quota = await db.quotas.create(new_quota_data_with_none)
+        await db.disconnect()
+        return inserted_quota
+    
+async def get_all_quotas():
+    db = Prisma()
+    await db.connect()
+    quotas = await db.quotas.find_many()
+    await db.disconnect()
+    return quotas
+
+async def delete_quota(rank_name):
+    db = Prisma()
+    await db.connect()
+
+    deleted_quota = await db.quotas.delete(where={"rankName": rank_name})
+    await db.disconnect()
+    return deleted_quota
+
+async def get_quota_by_rank(rank_name):
+    db = Prisma()
+    await db.connect()
+
+    quota = await db.quotas.find_unique(where={"rankName": rank_name})
+    await db.disconnect()
+
+    return quota
 
 
 
@@ -170,7 +214,6 @@ async def checkLog(interaction: discord.Interaction):
     await db.connect()
     operative = await db.operative.find_unique(where={'discordID': str(interaction.user.id)})
     log = await db.logs.find_unique(where={'logID': str(operative.activeLogID)})
-    logID = operative.activeLogID
     if operative.activeLog == False:
         return "No log is currently started!", False
     else:
@@ -197,7 +240,7 @@ async def prismaCancelLog(interaction: discord.Interaction):
     except Exception as e:
         return e, False
 
-async def prismaEndLog(interaction: discord.Interaction, unixTime: str):
+async def prismaEndLog(interaction: discord.Interaction, unixTime: str, logProof: str):
     try:
         db = Prisma()
         await db.connect()
@@ -206,7 +249,7 @@ async def prismaEndLog(interaction: discord.Interaction, unixTime: str):
         logID = operative.activeLogID
         if operative.activeLog == False:
             return "No log is currently started!", False
-        elapsed = round(((int(unixTime) - int(log.timeStarted))/60), 2)
+        elapsed = round(((int(unixTime) - int(log.timeStarted)) / 60), 2)
         if elapsed > 5:
             await db.operative.update(where={'discordID': str(interaction.user.id)},
                                       data={
@@ -214,16 +257,19 @@ async def prismaEndLog(interaction: discord.Interaction, unixTime: str):
                                           'activeLogID': f"NULL{random.randint(1000, 9999)}",
                                       })
             await db.logs.update(where={'logID': str(logID)},
-                                      data={
-                                          'timeEnded': unixTime,
-                                          'timeElapsed': str(elapsed),
-                                      })
+                                 data={
+                                     'timeEnded': unixTime,
+                                     'timeElapsed': str(elapsed),
+                                     'logProof': str(logProof),
+                                 })
             return str(elapsed), True
         else:
-            timeRemaining = int(log.timeStarted) + 300 #1500 = 25 minutes
-            return str("Log is eligible to end in **<t:" + str(timeRemaining) + ":R>**"), False
+            timeRemaining = int(log.timeStarted) + 300  # 1500 = 25 minutes
+            return str(f"Log is eligible to end in **<t:{timeRemaining}:R>**"), False
     except Exception as e:
+        print(e)
         return str(e), False
+
 
 async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
     try:
@@ -236,6 +282,8 @@ async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
             'timeStarted': unixTime,
             'timeEnded': "Null",
             'timeElapsed': "Null",
+            'logProof': "Null",
+            'operativeDiscordID': str(interaction.user.id),
             'operativeName': operative.userName
         })
         await db.operative.update(where={
@@ -256,10 +304,47 @@ async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
 async def getallLogs(member:discord.Member):
     db = Prisma()
     await db.connect()
-    logdata = await db.logs.find_many(where={"operativeDiscordID": f"{member.id}"})
+    logdata = await db.logs.find_many(where={"operativeDiscordID": f"{str(member.id)}"})
     await db.disconnect()
     return logdata
-    
+
+async def get_most_recent_patrol(operator: discord.Member):
+    db = Prisma()
+    await db.connect()
+    logs = await db.logs.find_many(where={"operativeDiscordID": str(operator.id)})
+    sorted_logs = sorted(logs, key=lambda x: x.timeStarted, reverse=True)[:1]
+    await db.disconnect()
+
+    if sorted_logs:
+        return sorted_logs[0]  # Return the first element if it exists
+    else:
+        return None  # Return None if the logs list is empty
+
+
+async def get_last_5_logs_for_user(operator_id):
+    db = Prisma()
+    await db.connect()
+    logs = await db.logs.find_many(where={"operativeDiscordID": f"{operator_id}"})
+    sorted_logs = sorted(logs, key=lambda x: x.timeStarted, reverse=True)[:5]
+    await db.disconnect()
+    return sorted_logs
+
+
+async def fetch_log_by_id(log_id):
+    db = Prisma()
+    await db.connect()
+    log = await db.logs.find_unique(where={'logID': log_id})
+    await db.disconnect()
+    return log
+
+async def fetch_log_by_id_for_user(operator:discord.Member, log_id:str):
+    db = Prisma()
+    await db.connect()
+    log = await db.logs.find_unique(where={'logID': log_id, 'operativeDiscordID': {str(operator.id)}})
+    await db.disconnect()
+    return log
+
+
 
 ## ROLEBINDS
 

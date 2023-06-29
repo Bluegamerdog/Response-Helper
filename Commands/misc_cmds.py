@@ -115,52 +115,7 @@ class otherCmds(commands.Cog):
         embed = discord.Embed(title="**<:trubotTRU:1096226111458918470> TRU Helper Infoboard**", description="Provided below are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
         embed.set_footer(text="TRU Helper | Python Version 1.1")
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1096146212245221496/1119208937061879859/TRU.png")
-        await interaction.response.send_message(embed=embed, view=InfoboardView())
-    
-    '''    
-    @app_commands.command(name="quota",description="Updates the quota block data. [TRUCapt+]")
-    @app_commands.describe(block="Enter a block number 7 through 26.")
-    @app_commands.choices(action=[
-        app_commands.Choice(name="View specifc block", value="view"),
-        app_commands.Choice(name="Set new active block", value="change"),
-        app_commands.Choice(name="Block overview", value="list"),
-        ])
-    async def updatequota(self, interaction:discord.Interaction, action:app_commands.Choice[str], block:int):
-        serverConfig = await fetch_config(interaction=interaction)
-        if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> Missing Permission!", description="You must be a member of DSBPC or above to use this command.", color=ErrorCOL), ephemeral=True)
-        all_blockdata = get_all_quota_data()
-        if all_blockdata is None:
-                return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotFailed:953641818057216050> No quota block data found!", description="There are no quota blocks in the database.", color=ErrorCOL), ephemeral=True)
-        if action.value == "list":
-            msg = f"I found data on {all_blockdata} block!\n\n" if rows == 1 else f"I found data on {rows} blocks!\n\n"
-            for data in all_blockdata:
-                msg += f"**Block {data[0]}** // Active: {bool(data[3])}\n<t:{data[1]}> - <t:{data[2]}>\n\n"
-            return await interaction.response.send_message(embed=discord.Embed(title="<:dsbbotInformation:1093651827234443266> List of Quota Blocks", description=msg, color=HRCommandsCOL), ephemeral=True)
-        
-        blockdata = get_quotablock()
-        req_blockdata = get_quotablock(block_num=block)
-        
-        if req_blockdata:
-            if action.value == "view":
-                return await interaction.response.send_message(embed = discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotInformation:1093651827234443266> Quota Block {req_blockdata[0]}", description=f"**Start Date:** <t:{req_blockdata[1]}:F>\n**End Date:** <t:{req_blockdata[2]}:F>\n**Active:** {bool(req_blockdata[3])}"), ephemeral=True)
-            elif action.value == "change":
-                if blockdata: # Check if there is an active block
-                    if block == blockdata[0]: # Given block is already active
-                        return await interaction.response.send_message(embed= discord.Embed(color=YellowCOL, title=f"<:dsbbotCaution:1067970676041982053> Quota Block {blockdata[0]} is already active!", description=f"Start Date: <t:{blockdata[1]}:F>\nEnd Date: <t:{blockdata[2]}:F>"), ephemeral=True)
-                    else: # If there was an active block but it is now changed
-                        set_active_block(block_num=block)
-                        new_blockdata = get_quotablock()
-                        return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully changed Quota Block!", description=f"*Quota Block {blockdata[0]} is now inactive and Quota Block {new_blockdata[0]} has been set as active!*\n**Before**\n<t:{blockdata[1]}:F> - <t:{blockdata[2]}:F>\n\n**After**\n<t:{new_blockdata[1]}:F> - <t:{new_blockdata[2]}:F>"))
-                else: # There is now an active quota block
-                    set_active_block(block_num=block)
-                    new_blockdata = get_quotablock()
-                    return await interaction.response.send_message(embed= discord.Embed(color=HRCommandsCOL, title=f"<:dsbbotSuccess:953641647802056756> Successfully set Quota Block!", description=f"*Quota Block {new_blockdata[0]} has been set to active!*\n**Start Date:** <t:{new_blockdata[1]}:F>\n**End Date:** <t:{new_blockdata[2]}:F>"))
-        else:
-            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title=f"<:dsbbotFailed:953641818057216050> No quota information for block number {block} found!", description=f"If you feel something is wrong with the database, please ping <@776226471575683082>."), ephemeral=True)
-       
-        
-   '''     
+        await interaction.response.send_message(embed=embed, view=InfoboardView())  
         
 
 

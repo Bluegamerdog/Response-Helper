@@ -24,7 +24,6 @@ async def createResponse(interaction:discord.Interaction, responseType:str, time
         })
         
         await db.disconnect()
-        print(new_response)
         if new_response:
             return new_response, True
         return None, False

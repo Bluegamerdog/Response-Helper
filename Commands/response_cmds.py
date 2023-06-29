@@ -40,7 +40,7 @@ class ResponseAnnouncementButtons(discord.ui.View):
         msg:discord.Message = await self.channel.send(f"{trurole.mention}", embed=self.embed, allowed_mentions=discord.AllowedMentions.all())
         new_response, success = await createResponse(interaction, str(self.res_type), str(self.start_time), False, False, msg.id, trello_card_link.id) #Database
         if success == True:
-            await self.fist_int.edit_original_response(view=None, embed = embedBuilder(responseType="succ", embedTitle="Response announced", embedDesc=f"→ [Announcement]({msg.jump_url})\n→ [Trello Card]({trello_card_link.short_url})"))
+            await self.fist_int.edit_original_response(view=None, embed = embedBuilder(responseType="succ", embedTitle="Response announced!", embedDesc=f"→ [Announcement]({msg.jump_url})\n→ [Trello Card]({trello_card_link.short_url})"))
             await msg.add_reaction("<:trubotTRU:1096226111458918470>")
         else:
             await self.fist_int.edit_original_response(view=None, embed = embedBuilder(responseType="err", embedDesc=f"{new_response}"))
@@ -48,7 +48,7 @@ class ResponseAnnouncementButtons(discord.ui.View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def CancelButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        return await interaction.response.edit_message(embed = embedBuilder(responseType="warn", embedTitle="Announcement cancelled"), view=None)
+        return await interaction.response.edit_message(embed = embedBuilder(responseType="warn", embedTitle="Announcement cancelled!"), view=None)
 
 class CommenceAnnouncemenetButtons(discord.ui.View):
     def __init__(self, embed:discord.Embed, channel:discord.TextChannel, fist_int:discord.Interaction, selected_response):
@@ -70,13 +70,13 @@ class CommenceAnnouncemenetButtons(discord.ui.View):
         await repmsg.edit(embed=rep_ann)
         msg = await repmsg.reply(f"{trurole.mention}", embed=self.embed, allowed_mentions=discord.AllowedMentions.all())
         await commenceResponse(interaction, responseID=self.selected_rep_id.responseID)
-        await self.fist_int.edit_original_response(view=None, embed = embedBuilder(responseType="succ", embedTitle="Response started", embedDesc=f"→ [Announcement]({msg.jump_url})"))
+        await self.fist_int.edit_original_response(view=None, embed = embedBuilder(responseType="succ", embedTitle="Response started!", embedDesc=f"→ [Announcement]({msg.jump_url})"))
         #database start op
         return
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def CancelButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        return await interaction.response.edit_message(embed = embedBuilder(responseType="warn", embedTitle="Announcement cancelled"), view=None)
+        return await interaction.response.edit_message(embed = embedBuilder(responseType="warn", embedTitle="Announcement cancelled!"), view=None)
 
 class ResponseSelect(discord.ui.Select):
     def __init__(self, responses, status, vc_id, channel, action_type, reason):
@@ -126,13 +126,13 @@ class ResponseSelect(discord.ui.Select):
                     rep_ann.title = f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response | Cancelled"
                 can_ann = discord.Embed(description=f"{interaction.user.mention}**'s {selected_response.responseType} response has been cancelled!**\n\n**Reason:** {self.reason}" if self.reason else f"{interaction.user.mention}**'s {selected_response.responseType} response has been cancelled!**", color=TRUCommandCOL)
                 await cancelResponse(interaction, str(selected_response.responseID))
-                await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle="Response cancelled", embedDesc=f"→ [Trello Card]({get_trello_card(selected_response.trellocardID).short_url})"), view=None)
+                await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle="Response cancelled!", embedDesc=f"→ [Trello Card]({get_trello_card(selected_response.trellocardID).short_url})"), view=None)
                 await repmsg.edit(embed=rep_ann)
                 await repmsg.reply(embed=can_ann)
             except Exception as e:
                 print(e)
         else:
-            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No valid 'action_type' found", embedDesc=f"`{self.action_type}` is not a valid 'action_type'."), ephemeral=True)
+            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No valid 'action_type' found!", embedDesc=f"`{self.action_type}` is not a valid 'action_type'."), ephemeral=True)
             
 class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
     def __init__(self, type:str):
@@ -146,11 +146,11 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
         try:
             start_time_int = int(self.start_time.value)
         except ValueError:
-            return await interaction.response.send_message(embed=embedBuilder("err", embedTitle=f"<:trubotDenied:1099642433588965447> Start time error!", embedDesc=f"ValueError: `start_time` can only be numbers. `{self.start_time}` is not a valid integer!"), ephemeral=True)
+            return await interaction.response.send_message(embed=embedBuilder("err", embedTitle=f"Start time error!", embedDesc=f"ValueError: `start_time` can only be numbers. `{self.start_time}` is not a valid integer!"), ephemeral=True)
 
         response_1 = await checkresponseTimes(self.start_time.value)
         if response_1 is not None:
-            return await interaction.response.send_message(embed=embedBuilder("warn", embedTitle=f"<:trubotDenied:1099642433588965447> Response Time Collision!", embedDesc=f"There is already a {response_1.responseType} response planned for <t:{self.start_time}> by {response_1.operativeName}."), ephemeral=True)
+            return await interaction.response.send_message(embed=embedBuilder("warn", embedTitle=f"Response Time Collision!", embedDesc=f"There is already a {response_1.responseType} response planned for <t:{self.start_time}> by {response_1.operativeName}."), ephemeral=True)
         else:
             serverConfig = await dbFuncs.fetch_config(interaction=interaction)
             self.channel = interaction.guild.get_channel(int(serverConfig.announceChannel))
@@ -174,11 +174,11 @@ class responseCmds(commands.GroupCog, group_name='response'):
         app_commands.Choice(name="Special Response", value="Special"),])
     async def r_create(self, interaction: discord.Interaction, response_type:app_commands.Choice[str], time_started:str, started:bool, spontaneous:bool, ann_msg_id:str, trellocard_id:str, time_ended:str, cancelled:bool, response_host:discord.Member):
         if DEVACCESS(interaction.user) is False:
-            await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Bot Developers."), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Bot Developers."), ephemeral=True)
         
         new_response, success = await createResponse(interaction, response_type.value, time_started, started, spontaneous, ann_msg_id, trellocard_id, time_ended, cancelled, response_host)
         if success is True:
-            response_embed = embedBuilder(responseType="succ", embedTitle="Created the following response:", color=SuccessCOL)
+            response_embed = embedBuilder(responseType="succ", embedTitle="Created the following response:")
             if type(new_response) is not str:
                     if new_response.cancelled:
                         status = "Cancelled"
@@ -222,7 +222,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Response Leaders and TRU Leadership."), ephemeral=True)
         if await getOperator(interaction.user.id) == None:
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         return await interaction.response.send_modal(ScheduleModal(type=type.value))
 
     @app_commands.command(name="spontaneous", description="Used to start scheduled & spontaneous responses.")
@@ -248,9 +248,9 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Response Leaders and TRU Leadership." ), ephemeral=True)
         if await getOperator(interaction.user.id) == None:
-            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
+            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         if await getUSERongoingResponses(interaction, interaction.user.id): #CHECK THAT USER DOES NOT HAVE AN ONGOING RESPONSE 
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response", embedDesc=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response!", embedDesc=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
         
         await interaction.response.send_message(embed = discord.Embed(color=YellowCOL, title=f"Creating Trello card and updating the database..."), ephemeral=True)
         start_time = int(time.time())
@@ -263,7 +263,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
         ann:discord.Message = await channel.send(trurole.mention, embed=repann, allowed_mentions=discord.AllowedMentions.all())
         new_response, success = await createResponse(interaction, str(rep_type.value), start_time, True , True, ann.id, trello_card_link.id)
-        await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle="Response announced", embedDesc=f"→ [Announcement]({ann.jump_url})\n→ [Trello Card]({trello_card_link.short_url})"))
+        await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle="Response announced!", embedDesc=f"→ [Announcement]({ann.jump_url})\n→ [Trello Card]({trello_card_link.short_url})"))
     
     @app_commands.command(name="commence", description="Used to start scheduled responses.")
     @app_commands.choices(vc=[
@@ -282,9 +282,9 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Response Leaders and TRU Leadership." ), ephemeral=True)
         if await getOperator(interaction.user.id) == None:
-            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
+            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         if await getUSERongoingResponses(interaction, interaction.user.id): #CHECK THAT USER DOES NOT HAVE AN ONGOING RESPONSE 
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response", embedDesc=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response!", embedDesc=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
         
         scheduled_responses = await getUSERplannedResponses(interaction, interaction.user.id)
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
@@ -292,7 +292,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
             view = View().add_item(ResponseSelect(responses=scheduled_responses, status=status, vc_id=vc.value, channel=channel, action_type="commence", reason=None))
             await interaction.response.send_message(view=view, ephemeral=True)
         else:
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found", embedDesc=f"You do not have a scheduled response to start!"), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found!", embedDesc=f"You do not have a scheduled response to start!"), ephemeral=True)
                 
     @app_commands.command(name="conclude", description="Used to conclude an operations.")
     async def conclude(self, interaction:discord.Interaction, picture:discord.Attachment):
@@ -300,7 +300,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Response Leaders and TRU Leadership."), ephemeral=True)
         if await getOperator(interaction.user.id) == None:
-            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
+            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         response_data = await getUSERongoingResponses(interaction, interaction.user.id)
         if response_data:
             await interaction.response.defer(ephemeral=True)
@@ -314,7 +314,7 @@ class responseCmds(commands.GroupCog, group_name='response'):
             con_ann = discord.Embed(description=f"{interaction.user.mention}'s {response_data.responseType} response has concluded!", color=TRUCommandCOL)
             await repmsg.edit(embed=rep_ann)
             await repmsg.reply(embed=con_ann)
-            await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle="Response concluded", embedDesc=f"→ [Trello Card]({get_trello_card(response_data.trellocardID).short_url})"))
+            await interaction.edit_original_response(embed = embedBuilder(responseType="succ", embedTitle="Response concluded!", embedDesc=f"→ [Trello Card]({get_trello_card(response_data.trellocardID).short_url})"))
             await concludeResponse(interaction, str(response_data.responseID))
         else:
             await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found", embedDesc="You do not have an on-going response to conclude!"), ephemeral=True)
@@ -325,14 +325,14 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.announcePermissionRole))):
             await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Response Leaders and TRU Leadership." ), ephemeral=True)
         if await getOperator(interaction.user.id) == None:
-            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
+            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         planned_responses = await getUSERplannedResponses(interaction, str(interaction.user.id))
         if planned_responses:
             channel = self.bot.get_channel(int(serverConfig.announceChannel))
             view = View().add_item(ResponseSelect(responses=planned_responses, status=None, vc_id=None, channel=channel,action_type="cancel", reason=reason))
             await interaction.response.send_message(view=view, ephemeral=True)
         else:
-            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found", embedDesc="You do not have an on-going response to cancel!"), ephemeral=True)
+            await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found!", embedDesc="You do not have an on-going response to cancel!"), ephemeral=True)
     
     @app_commands.command(name="view", description="Used to view response chains.")
     async def view_response(self, interaction: discord.Interaction, response_leader:discord.Member = None):
@@ -388,9 +388,9 @@ class responseCmds(commands.GroupCog, group_name='response'):
     async def delete_response(self, interaction:discord.Interaction, response_id:str):
         if DEVACCESS(interaction.user):
             if await deleteResponse(responseID=response_id) is True:
-                return await interaction.response.send_message(embed = embedBuilder("succ", embedTitle="Successfully deleted", embedDesc=f"Successfully deleted response `{response_id}`"))
+                return await interaction.response.send_message(embed = embedBuilder("succ", embedTitle="Response deleted!", embedDesc=f"Successfully deleted response `{response_id}`"))
             else:
-                return await interaction.response.send_message(embed = embedBuilder("err", embedTitle="Response not found", embedDesc=f"Response `{response_id}` was not found in the DB..."))
+                return await interaction.response.send_message(embed = embedBuilder("err", embedTitle="Response not found!", embedDesc=f"Response `{response_id}` was not found in the DB..."))
         else:
             return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="This command is limited to Bot Developers."))
                     

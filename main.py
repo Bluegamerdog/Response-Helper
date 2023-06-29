@@ -20,7 +20,7 @@ from Functions.rolecheckFunctions import *
 from Commands.bot_cmds import botCmds, serverconfigCmds, rolebindCmds
 from Commands.command_testing import testingCmds, oldpatrolCmds
 from Commands.misc_cmds import otherCmds
-from Commands.quota_cmds import patrolCmds, viewdataCommand, quotaCmds
+from Commands.quota_cmds import patrolCmds, viewdataCommand, quotaCmds, quotablockCommands
 from Commands.operator_cmds import operatorCmds
 from Commands.response_cmds import responseCmds
 #from Commands.strike_cmds import strikecmds
@@ -54,6 +54,7 @@ async def on_ready():
     await bot.add_cog(patrolCmds(bot))
     await bot.add_cog(quotaCmds(bot))
     await bot.add_cog(viewdataCommand(bot))
+    await bot.add_cog(quotablockCommands(bot))
     
     #operator_cmds.py
     await bot.add_cog(operatorCmds(bot))

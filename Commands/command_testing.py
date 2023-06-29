@@ -25,6 +25,22 @@ from Functions.trelloFunctions import (create_response_card, get_member,
 
 truAccept = discord.PartialEmoji(name="trubotAccepted", id=1096225940578766968)
 
+
+import requests
+import datetime
+
+def get_last_rank_update(group_id, user_id):
+    url = f"https://groups.roblox.com/v1/groups/{group_id}/users/{user_id}"
+    response = requests.get(url)
+    data = response.json()
+    
+    if "updated" in data:
+        last_updated = data["updated"]
+        last_updated_timestamp = datetime.datetime.strptime(last_updated, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return last_updated_timestamp
+    else:
+        return None
+
 # Just to test random shit
 
 class testingCmds(commands.Cog):
@@ -48,17 +64,34 @@ class testingCmds(commands.Cog):
         await interaction.response.send_message(f"{operativeName} || <t:{start_time}> - <t:{end_time}>\n\nResponses attended: {amount}")
         
     @app_commands.command(name="text_testing", description="Previewing text and embeds")
-    async def testing2(self, interaction:discord.Interaction, user:discord.Member = None):
+    @app_commands.choices(rank=[
+    app_commands.Choice(name="totally a real rank", value="25"),
+    app_commands.Choice(name="Vanguard Officer", value="20"),
+    app_commands.Choice(name="Vanguard", value="15"),
+    app_commands.Choice(name="Elite Operator", value="5"),
+    app_commands.Choice(name="Senior Operator", value="4"),
+    app_commands.Choice(name="Operator", value="3"),
+    app_commands.Choice(name="Entrant", value="1"),])
+    async def testing2(self, interaction:discord.Interaction, rank:app_commands.Choice[str]):
         #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True
-        await interaction.response.send_message(embed=embedBuilder(responseType="cust", embedTitle="Testing"), ephemeral=True)
+        await interaction.response.send_message(embed=discord.Embed(title="<a:trubotCelebration:1099643172012949555> TRU Promotion!", description=f"You have been promoted from **placeholder** to **{rank.name}**!\n\n{get_promotion_message(str(rank.name))}", color=DarkGreenCOL), ephemeral=True)
         
 
 
-    @app_commands.command(name="testing", description="Current: time")
+    @app_commands.command(name="testing", description="Current: roblox group")
     async def testing3(self, interaction:discord.Interaction):
         #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
-        quotadata = await get_all_quota_data()
-        await interaction.response.send_message(f"{quotadata}", ephemeral=True)
+        group_id = 15155175  # Replace with your Roblox group ID
+        user_id = 334150937  # Replace with the user ID you want to check
+
+        last_update = get_last_rank_update(group_id, user_id)
+        if last_update is not None:
+            return await interaction.response.send_message(f"Last Rank Update: {last_update}", ephemeral=True )
+        else:
+            return await interaction.response.send_message("Failed to retrieve rank information.", ephemeral=True)
+        
+        #uotadata = await get_all_quota_data()
+        #await interaction.response.send_message(f"{quotadata}", ephemeral=True)
         
         
         
