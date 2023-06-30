@@ -42,6 +42,7 @@ trello_day_dict = {
 
 def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
     
+    print(due_date)
     due_date_datetime = datetime.utcfromtimestamp(due_date)
     weekday = due_date_datetime.strftime("%A")
     if weekday in trello_day_dict:
@@ -53,7 +54,7 @@ def create_response_card(type:str, spontaneus:bool, due_date, ringleader_id):
     host = get_trello_id(ringleader_id)
         
     due_date_str = due_date_datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    newCard = trellolist.add_card(name=f"{type} Response", due=due_date_str)
+    newCard = trellolist.add_card(name=f"{type} Response [Testing]", due=due_date_str)
     if host:
         ringleader = trello.get_member(get_trello_id(ringleader_id))
         newCard.add_member(ringleader)

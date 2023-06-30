@@ -33,7 +33,7 @@ class ResponseAnnouncementButtons(discord.ui.View):
     
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def ConfirmButton(self, interaction:discord.Interaction, button:discord.ui.Button):
-        await interaction.response.edit_message(embed=discord.Embed(description="<:trubotBeingLookedInto:1099642414303559720> Creating the trello card, updating the database and sending the announement...", color=TRUCommandCOL), view=None)
+        await interaction.response.edit_message(embed=discord.Embed(description="<:trubotBeingLookedInto:1099642414303559720> Creating the trello card, updating the database and sending the announcement...", color=TRUCommandCOL), view=None)
         trello_card_link = create_response_card(self.res_type, False, self.start_time, interaction.user.id) #Trello
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
@@ -106,7 +106,7 @@ class ResponseSelect(discord.ui.Select):
                 selected_response = await getResponseInfo(interaction, int(self.values[0]))
                 test_ann = discord.Embed(title=f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response is now commencing!", color=TRUCommandCOL)
                 test_ann.add_field(name="Response Leader", value=f"{interaction.user.mention}", inline=False)
-                resposne_leader, success = await getOperator(interaction)
+                resposne_leader = await getOperator(interaction.user.id)
                 test_ann.add_field(name="Details", value=f"➥**Join link:** {resposne_leader.profileLink}\n➥**Voice Channel:** <#{self.vc_id}>\n➥**Status:** {self.status}", inline=False)
                 await interaction.response.edit_message(embed=test_ann, view=CommenceAnnouncemenetButtons(test_ann, self.channel, interaction, selected_response))
             except Exception as e:
@@ -139,7 +139,7 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
         super().__init__(timeout=None)
         self.type = type
     
-    start_time = ui.TextInput(label='Time', placeholder="ONLY Unix timestamp of start time. [ONLY NUMBERS]",style=discord.TextStyle.short, required=True)
+    start_time = ui.TextInput(label='Time', placeholder="Must be a valid Unix timestamp, numbers only.",style=discord.TextStyle.short, required=True)
     notes = ui.TextInput(label='Notes', placeholder="Purpose, goals, etc.", style=discord.TextStyle.paragraph, required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -147,8 +147,12 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
             start_time_int = int(self.start_time.value)
         except ValueError:
             return await interaction.response.send_message(embed=embedBuilder("err", embedTitle=f"Start time error!", embedDesc=f"ValueError: `start_time` can only be numbers. `{self.start_time}` is not a valid integer!"), ephemeral=True)
+        try:
+            due_date_datetime = datetime.utcfromtimestamp(start_time_int)
+        except OSError:
+            return await interaction.response.send_message(embed=embedBuilder("err", embedTitle="Start time error!", embedDesc="OSError: `start_time` is not a valid Unix timestamp!"), ephemeral=True)
 
-        response_1 = await checkresponseTimes(self.start_time.value)
+        response_1 = await checkresponseTimes(start_time_int)
         if response_1 is not None:
             return await interaction.response.send_message(embed=embedBuilder("warn", embedTitle=f"Response Time Collision!", embedDesc=f"There is already a {response_1.responseType} response planned for <t:{self.start_time}> by {response_1.operativeName}."), ephemeral=True)
         else:
@@ -158,7 +162,7 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
             repann.add_field(name="Time", value=f"<t:{self.start_time}>", inline=False)
             repann.add_field(name="Response Leader", value=f"{interaction.user.mention}", inline=False)
             repann.add_field(name="Notes", value=f"{self.notes}", inline=False)
-            await interaction.response.send_message(embed=repann, ephemeral=True, view=ResponseAnnouncementButtons(repann, channel=self.channel, res_type=self.type, start_time=int(self.start_time.value), fist_int=interaction))
+            await interaction.response.send_message(embed=repann, ephemeral=True, view=ResponseAnnouncementButtons(repann, channel=self.channel, res_type=self.type, start_time=start_time_int, fist_int=interaction))
 
 
 class responseCmds(commands.GroupCog, group_name='response'):
@@ -250,15 +254,15 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if await getOperator(interaction.user.id) == None:
             await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         if await getUSERongoingResponses(interaction, interaction.user.id): #CHECK THAT USER DOES NOT HAVE AN ONGOING RESPONSE 
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response!", embedDesc=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response!", embedDesc=f"You cannot host more than one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
         
         await interaction.response.send_message(embed = discord.Embed(color=YellowCOL, title=f"Creating Trello card and updating the database..."), ephemeral=True)
         start_time = int(time.time())
         trello_card_link = create_response_card(rep_type.value, True, start_time, interaction.user.id)
-        resposne_leader, success = await getOperator(interaction)
+        response_leader = await getOperator(interaction.user.id)
         repann = discord.Embed(title=f"<:trubotTRU:1096226111458918470> Spontaneous {rep_type.value} Response | Ongoing", color=TRUCommandCOL)
         repann.add_field(name="Response Leader", value=f"{interaction.user.mention}", inline=False)
-        repann.add_field(name="Details:", value=f"➥**Join link:** {resposne_leader.profileLink}\n➥**Voice Channel:** <#{vc.value}>\n➥**Status:** {status}", inline=False)
+        repann.add_field(name="Details:", value=f"➥**Join link:** {response_leader.profileLink}\n➥**Voice Channel:** <#{vc.value}>\n➥**Status:** {status}", inline=False)
         trurole:discord.Role = interaction.guild.get_role(int(serverConfig.announceRole))
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
         ann:discord.Message = await channel.send(trurole.mention, embed=repann, allowed_mentions=discord.AllowedMentions.all())
@@ -284,13 +288,13 @@ class responseCmds(commands.GroupCog, group_name='response'):
         if await getOperator(interaction.user.id) == None:
             await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="User not found!", embedDesc=f"You need to be registered to use this command."), ephemeral=True)
         if await getUSERongoingResponses(interaction, interaction.user.id): #CHECK THAT USER DOES NOT HAVE AN ONGOING RESPONSE 
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response!", embedDesc=f"You cannot host one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
+            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle=f"You still have an on-going response!", embedDesc=f"You cannot host more than one responses at a time, please conclude your previous response first. If you believe this is an error, please ping <@!776226471575683082>."), ephemeral=True)
         
         scheduled_responses = await getUSERplannedResponses(interaction, interaction.user.id)
         channel = self.bot.get_channel(int(serverConfig.announceChannel))
         if scheduled_responses:
             view = View().add_item(ResponseSelect(responses=scheduled_responses, status=status, vc_id=vc.value, channel=channel, action_type="commence", reason=None))
-            await interaction.response.send_message(view=view, ephemeral=True)
+            return await interaction.response.send_message(view=view, ephemeral=True)
         else:
             return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found!", embedDesc=f"You do not have a scheduled response to start!"), ephemeral=True)
                 
@@ -335,52 +339,61 @@ class responseCmds(commands.GroupCog, group_name='response'):
             await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="No response found!", embedDesc="You do not have an on-going response to cancel!"), ephemeral=True)
     
     @app_commands.command(name="view", description="Used to view response chains.")
-    async def view_response(self, interaction: discord.Interaction, response_leader:discord.Member = None):
+    async def view_response(self, interaction: discord.Interaction, response_leader:discord.Member = None, response_id:str=None):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         await interaction.response.defer()
         # Fetch the response chains from the database
-        if response_leader:
+        if response_id:
+            response_chains = await getResponseByID(response_id)
+            response_chains = [response_chains] if response_chains else []
+            response_embed = embedBuilder("succ", embedTitle="Response found!")
+            
+        elif response_leader:
             response_chains = await getUSERResponses(response_leader.id)
             response_embed = discord.Embed(color=TRUCommandCOL, title=f"Response Overview - {response_leader.nick}")
         else:
             response_chains = await getAllResponses()
             response_embed = discord.Embed(color=TRUCommandCOL, title="General Response Overview")
-            
+        
+        if isinstance(response_chains, list):    
         #print(response_chains)
         # Limit of 15 responses at a time (Maybe add buttons again at one point)
-        response_chains = response_chains[:15]
+            response_chains = response_chains[:15]
 
-        # Sort the response chains by start time
-        response_chains.sort(key=lambda r: r.timeStarted, reverse=True)
-        
-        
-        # Format the response chains as a string
-        if response_chains:
-            for i, response in enumerate(response_chains):
-                if response.cancelled:
-                    status = "Cancelled"
-                elif str(response.timeEnded) != "Null":
-                    status = "Concluded"
-                elif response.started:
-                    status = "Ongoing"
-                else:
-                    status = "Scheduled"
-                trellocard = get_trello_card(response.trellocardID)
-                response_embed.add_field(
-                    name=f"{response.responseType} || {status}",
-                    value=f"""
-                        >>> Response Leader: {interaction.guild.get_member(int(response.operativeDiscordID)).mention}
-                        Time Started: <t:{response.timeStarted}>
-                        Time ended: {'N/A' if str(response.timeEnded) == 'Null' else f'<t:{response.timeEnded}>'}
-                        Spontaneous: {response.spontaneous}
-                        Trello Card: {trellocard.short_url if trellocard else "Error fetching the trello card."}
-                    """,
-                    inline=False
-                )
+            # Sort the response chains by start time
+            response_chains.sort(key=lambda r: r.timeStarted, reverse=True)
+            
 
+            
+            # Format the response chains as a string
+            if response_chains:
+                for i, response in enumerate(response_chains):
+                    if response.cancelled:
+                        status = "Cancelled"
+                    elif str(response.timeEnded) != "Null":
+                        status = "Concluded"
+                    elif response.started:
+                        status = "Ongoing"
+                    else:
+                        status = "Scheduled"
+                    trellocard = get_trello_card(response.trellocardID)
+                    response_embed.add_field(
+                        name=f"{response.responseType} || {status}",
+                        value=f"""
+                            >>> Response Leader: {interaction.guild.get_member(int(response.operativeDiscordID)).mention}
+                            Time Started: <t:{response.timeStarted}>
+                            Time ended: {'N/A' if str(response.timeEnded) == 'Null' else f'<t:{response.timeEnded}>'}
+                            Spontaneous: {response.spontaneous}
+                            Trello Card: {trellocard.short_url if trellocard else "Error fetching the trello card."}
+                            Response ID: `{response.responseID}`
+                        """,
+                        inline=False
+                    )
+
+            else:
+                response_embed.add_field(name="", value="No responses found in the database.")
         else:
-            response_embed.add_field(name="", value="No responses found in the database.")
-
+            response_embed.add_field(name="", value=f"Error retrieving response chains.\n{response_chains}")
 
         await interaction.edit_original_response(embed=response_embed)
     

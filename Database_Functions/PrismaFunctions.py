@@ -270,7 +270,6 @@ async def prismaEndLog(interaction: discord.Interaction, unixTime: str, logProof
         print(e)
         return str(e), False
 
-
 async def prismaCreatelog(interaction: discord.Interaction, unixTime: str):
     try:
         log_id = str(uuid.uuid4())[:8]
@@ -320,7 +319,6 @@ async def get_most_recent_patrol(operator: discord.Member):
     else:
         return None  # Return None if the logs list is empty
 
-
 async def get_last_5_logs_for_user(operator_id):
     db = Prisma()
     await db.connect()
@@ -328,7 +326,6 @@ async def get_last_5_logs_for_user(operator_id):
     sorted_logs = sorted(logs, key=lambda x: x.timeStarted, reverse=True)[:5]
     await db.disconnect()
     return sorted_logs
-
 
 async def fetch_log_by_id(log_id):
     db = Prisma()

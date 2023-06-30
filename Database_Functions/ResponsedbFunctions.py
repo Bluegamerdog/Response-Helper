@@ -117,13 +117,17 @@ async def getUSERongoingResponses(interaction:discord.Interaction, hostDiscordID
     except Exception as e:
         return e
     
-async def getUSERResponses(hostDiscordID:str):
+async def getUSERResponses(hostDiscordID: str):
     try:
         db = Prisma()
         await db.connect()
-        
-        user_responses = await db.response.find_many(where={'operativeDiscordID': str(hostDiscordID)})
-        
+
+        user_responses = await db.response.find_many(
+            where={'operativeDiscordID': str(hostDiscordID)},
+            order=[{'timeStarted': 'desc'}],
+            take=5
+        )
+
         await db.disconnect()
         return user_responses
     except Exception as e:
@@ -133,13 +137,28 @@ async def getAllResponses():
     try:
         db = Prisma()
         await db.connect()
-        
-        responses = await db.response.find_many()
-        
+
+        responses = await db.response.find_many(
+            order=[{'timeStarted': 'desc'}], 
+            take=5)
+
         await db.disconnect()
         return responses
     except Exception as e:
         return e
+
+async def getResponseByID(responseID: str):
+    try:
+        db = Prisma()
+        await db.connect()
+
+        response = await db.response.find_first(where={'responseID': str(responseID)})
+
+        await db.disconnect()
+        return response
+    except Exception as e:
+        return e
+
 
     
 async def deleteResponse(responseID):
