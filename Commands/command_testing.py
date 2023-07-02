@@ -20,8 +20,7 @@ from Functions.formattingFunctions import embedBuilder
 from Functions.mainVariables import *
 from Functions.rolecheckFunctions import *
 from Functions.randFunctions import *
-from Functions.trelloFunctions import (create_response_card, get_member,
-                                       get_members, get_card_comments, get_total_comment_amount, get_comments_timeframe)
+from Functions.trelloFunctions import (create_response_card, get_card_comments, get_comments_timeframe)
 
 truAccept = discord.PartialEmoji(name="trubotAccepted", id=1096225940578766968)
 
@@ -49,19 +48,8 @@ class testingCmds(commands.Cog):
 
     @app_commands.command(name="trello_testing", description="Testing trello functions")
     async def trello_testing(self, interaction:discord.Interaction, user:discord.Member = None, start_time:str = None, end_time:str = None):
-        #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
         
-        if user == None:
-            user = interaction.user
-        operativeName = user.nick.rsplit(maxsplit=1)[-1]
-        comments = get_card_comments(operativeName)
-        
-        if start_time is None and end_time is None:
-            amount = get_total_comment_amount(comments)
-        elif start_time:
-            amount = get_comments_timeframe(comments, start_time, end_time)
-        
-        await interaction.response.send_message(f"{operativeName} || <t:{start_time}> - <t:{end_time}>\n\nResponses attended: {amount}")
         
     @app_commands.command(name="text_testing", description="Previewing text and embeds")
     @app_commands.choices(rank=[
