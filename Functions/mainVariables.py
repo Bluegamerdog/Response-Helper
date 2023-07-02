@@ -24,5 +24,3 @@ global lmfao_event
 
 TRUServerID = 1095823532438597795
 SupportServerID = 1095823532438597795 # Main server rn
-watching_command = False
-lmfao_event = False

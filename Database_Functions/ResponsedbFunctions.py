@@ -4,30 +4,32 @@ import discord
 
 # Mostly done but I def missed something :skull:
 
-async def createResponse(interaction:discord.Interaction, responseType:str, timeStarted:int, started:bool, spontaneous:bool, messageID:str, trellocard_ID:str):
+async def createResponse(interaction:discord.Interaction, responseType:str, timeStarted:int, started:bool, spontaneous:bool, messageID:str, trellocard_ID:str, timeEnded:str = None, cancelled:bool=None, hostdiscordUser:discord.Member=None):
     try:
         
         db = Prisma()
         await db.connect()
         
-        await db.response.create(data={
+        new_response = await db.response.create(data={
             'responseID' : str(messageID),
             'responseType' : responseType,
             'timeStarted' : str(timeStarted),
-            'timeEnded' : "Null",
+            'timeEnded' : "Null" if timeEnded is None else str(timeEnded),
             'started' : started,
-            'cancelled' : False,
+            'cancelled' : False if cancelled is None else cancelled,
             'spontaneous' : spontaneous,
             'trellocardID' : str(trellocard_ID),
-            'operativeDiscordID' : str(interaction.user.id),
-            'operativeName' : interaction.user.nick
+            'operativeDiscordID' : str(interaction.user.id) if hostdiscordUser is None else str(hostdiscordUser.id),
+            'operativeName' : str(interaction.user.nick) if hostdiscordUser is None else str(hostdiscordUser.nick)
         })
         
         await db.disconnect()
-        return True
+        if new_response:
+            return new_response, True
+        return None, False
     except Exception as e:
         print(e)
-        return e
+        return e, False
     
 async def cancelResponse(interaction:discord.Interaction, responseID:str):
     try:    
@@ -46,9 +48,9 @@ async def concludeResponse(interaction:discord.Interaction, responseID:str):
     try:    
         db = Prisma()
         await db.connect()
-        time_Ended = str(time.time())
+        time_Ended = int(time.time())
         await db.response.update(where={'responseID' : str(responseID)},
-                                 data={'timeEnded' : time_Ended, 'started' : False})
+                                 data={'timeEnded' : str(time_Ended), 'started' : False})
         
         await db.disconnect()
         return True
@@ -114,6 +116,49 @@ async def getUSERongoingResponses(interaction:discord.Interaction, hostDiscordID
         return response
     except Exception as e:
         return e
+    
+async def getUSERResponses(hostDiscordID: str):
+    try:
+        db = Prisma()
+        await db.connect()
+
+        user_responses = await db.response.find_many(
+            where={'operativeDiscordID': str(hostDiscordID)},
+            order=[{'timeStarted': 'desc'}],
+            take=5
+        )
+
+        await db.disconnect()
+        return user_responses
+    except Exception as e:
+        return e
+    
+async def getAllResponses():
+    try:
+        db = Prisma()
+        await db.connect()
+
+        responses = await db.response.find_many(
+            order=[{'timeStarted': 'desc'}], 
+            take=5)
+
+        await db.disconnect()
+        return responses
+    except Exception as e:
+        return e
+
+async def getResponseByID(responseID: str):
+    try:
+        db = Prisma()
+        await db.connect()
+
+        response = await db.response.find_first(where={'responseID': str(responseID)})
+
+        await db.disconnect()
+        return response
+    except Exception as e:
+        return e
+
 
     
 async def deleteResponse(responseID):

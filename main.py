@@ -14,159 +14,225 @@ from discord import app_commands
 from discord.ext import commands
 
 
-
 from Functions.mainVariables import *
-from Functions.permFunctions import *
-#from Functions.randFunctions import *
-from Commands.trumanagementcmds import ManagementCmds, QuotaCmds
-from Commands.botcmds import BotCmds
-from Commands.responsecmds import OperationCmds
-from Commands.othercmds import otherCmds
-from Commands.quotacmds import pointCmds, mypointsCmd
-from Commands.registrycmds import RegistryCmds
-from Commands.requestcmds import RequestCmds
-from Commands.newDBCommands import SealDBCommands, DBCmds
-from Commands.testingcmds import testingCmds
+from Functions.rolecheckFunctions import *
+from Commands.bot_cmds import botCmds, serverconfigCmds, rolebindCmds
+from Commands.command_testing import testingCmds, oldpatrolCmds
+from Commands.misc_cmds import otherCmds
+from Commands.quota_cmds import (
+    patrolCmds,
+    viewdataCommand,
+    quotaCmds,
+    quotablockCommands,
+)
+from Commands.operator_cmds import operatorCmds
+from Commands.response_cmds import responseCmds
+from Functions.formattingFunctions import *
+from Functions.trelloFunctions import *
 
+# from Commands.strike_cmds import strikecmds
 
 
 bot = commands.Bot(command_prefix=">", intents=discord.Intents().all())
 tree = app_commands.CommandTree(discord.Client(intents=discord.Intents().all()))
 start_time = datetime.now()
-@bot.event  
+
+
+async def accept_loa(interaction: discord.Interaction, message: discord.Message):
+    # Check if the context menu is used in the designated LoA channel
+    loa_channel_id = 1121081165697265684  # bot-testing
+    if message.channel.id != loa_channel_id:
+        return await interaction.response.send_message(
+            embed=embedBuilder(
+                "err",
+                "This context menu can only be used in the designated LoA channel.",
+                "Incorrect channel!",
+            ),
+            ephemeral=True,
+        )
+
+    _emoji = "<:Accepted:1095834084636364900>"
+    for reaction in message.reactions:
+        if str(reaction.emoji) == _emoji:
+            return await interaction.response.send_message(
+                embed=embedBuilder(
+                    "err", "This LoA has already been accepted.", "While processing..."
+                ),
+                ephemeral=True,
+            )
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    member = interaction.guild.get_member(message.author.id)
+    card = get_card_by_name_managmanetBoard(member.display_name.split()[-1])
+    if card:
+        add_loa_label(card.id)
+    if member:
+        loa_role_id = 1096194282840395857  # Replace with the ID of the LoA role
+        loa_role = interaction.guild.get_role(loa_role_id)
+        if loa_role:
+            await member.add_roles(loa_role)
+            await message.add_reaction(_emoji)
+
+            await interaction.edit_original_response(
+                embed=embedBuilder(
+                    "succ",
+                    f"{member.mention}'s LoA has been accepted and their trello card has been updated.",
+                )
+            )
+            return await message.reply(f"LoA accepted by {interaction.user.mention}.")
+        else:
+            await interaction.edit_original_response(
+                embed=embedBuilder(
+                    "err", f"Could not find the designated LoA role (`{loa_role_id}`)"
+                )
+            )
+
+
+async def end_loa(interaction: discord.Interaction, message: discord.Message):
+    # Check if the context menu is used in the designated LoA channel
+    loa_channel_id = 1121081165697265684  # bot-testing
+    if message.channel.id != loa_channel_id:
+        return await interaction.response.send_message(
+            embed=embedBuilder(
+                "err",
+                "This context menu can only be used in the designated LoA channel.",
+                "Incorrect channel!",
+            ),
+            ephemeral=True,
+        )
+    _emoji = "<:ExpiredOver:1102161253515931768>"  # Replace with the ID of the accepted emoji
+    for reaction in message.reactions:
+        if str(reaction.emoji) == _emoji:
+            return await interaction.response.send_message(
+                embed=embedBuilder(
+                    "err", "This LoA has already been expired.", "While processing..."
+                ),
+                ephemeral=True,
+            )
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    member = interaction.guild.get_member(message.author.id)
+    card = get_card_by_name_managmanetBoard(member.display_name.split()[-1])
+    if card:
+        remove_loa_label(card.id)
+        add_loa_to_card(card.id, message.content)
+    if member:
+        loa_role_id = 1096194282840395857  # Replace with the ID of the LoA role
+        loa_role = interaction.guild.get_role(loa_role_id)
+        if loa_role:
+            await member.remove_roles(loa_role)
+            await message.add_reaction(_emoji)
+            await interaction.edit_original_response(
+                embed=embedBuilder(
+                    "succ",
+                    embedDesc=f"{member.mention} has been removed from the LoA role. Please make sure their LoA has been properly archived. [Card Link]({card.shortUrl})."
+                    if card
+                    else f"{member.mention} has been removed from the LoA role. Please make sure their LoA has been properly archived.",
+                )
+            )
+            return await message.reply(f"LoA expired.")
+        else:
+            await interaction.edit_original_response(
+                embed=embedBuilder(
+                    "err", f"Could not find the designated LoA role (`{loa_role_id}`)"
+                )
+            )
+
+
+loaaccept_context_menu = app_commands.ContextMenu(
+    name="Accept LoA",
+    callback=accept_loa,
+)
+
+loaend_context_menu = app_commands.ContextMenu(
+    name="Expire LoA",
+    callback=end_loa,
+)
+
+
+bot.tree.add_command(loaaccept_context_menu)
+bot.tree.add_command(loaend_context_menu)
+
+
+@bot.event
 async def on_ready():
     print("Loading imports...")
-    #await bot.add_cog(DatabaseCmds(bot))
-    await bot.add_cog(BotCmds(bot, start_time))
-    await bot.add_cog(ManagementCmds(bot))
-    await bot.add_cog(OperationCmds(bot))
-    await bot.add_cog(otherCmds(bot))
-    #await bot.add_cog(QuotaCmds(bot))
-    await bot.add_cog(mypointsCmd(bot))
-    #await bot.add_cog(RegistryCmds(bot))
-    #await bot.add_cog(RequestCmds(bot))
+
+    # bot_cmds.py
+    await bot.add_cog(botCmds(bot))
+    await bot.add_cog(serverconfigCmds(bot))
+    await bot.add_cog(rolebindCmds(bot))
+
+    # misc_cmds.py
+    await bot.add_cog(otherCmds(bot, start_time))
+
+    # quota_cmds.py
+    await bot.add_cog(patrolCmds(bot))
+    await bot.add_cog(quotaCmds(bot))
+    await bot.add_cog(viewdataCommand(bot))
+    await bot.add_cog(quotablockCommands(bot))
+
+    # operator_cmds.py
+    await bot.add_cog(operatorCmds(bot))
+
+    # TBA_response_cmds.py
+    await bot.add_cog(responseCmds(bot))
+
+    # command_testing.py
     await bot.add_cog(testingCmds(bot))
-    await bot.add_cog(SealDBCommands(bot))
-    await bot.add_cog(QuotaCmds(bot))
-    #await bot.add_cog(DBCmds(bot))
-    #await bot.add_cog(SealLoggingCommands(bot))
-    
-    
+    # await bot.add_cog(oldpatrolCmds(bot))
+
+    # strike_cmds.py
+    # await bot.add_cog(strikeCmds(bot))
+
     # Console output
     prfx = (Back.BLACK + Fore.BLUE) + Back.RESET + Fore.WHITE + Style.BRIGHT
-    print(prfx + "|| Logged in as " + Fore.BLUE + bot.user.name + "  at  " + time.strftime("%H:%M:%S UTC", time.gmtime()))
+    print(
+        prfx
+        + "|| Logged in as "
+        + Fore.BLUE
+        + bot.user.name
+        + "  at  "
+        + time.strftime("%H:%M:%S UTC", time.gmtime())
+    )
     print(prfx + "|| Bot ID: " + Fore.BLUE + str(bot.user.id))
     print(prfx + "|| Discord Version: " + Fore.BLUE + discord.__version__)
     print(prfx + "|| Python Version: " + Fore.BLUE + str(platform.python_version()))
     print(prfx + "Syncing commands...")
     try:
         synced = await bot.tree.sync()
-        print("\033[2K" + prfx + f"|| Slash CMDs Synced: {Fore.BLUE}{len(synced)} Commands")
+        print(
+            "\033[2K"
+            + prfx
+            + f"|| Slash CMDs Synced: {Fore.BLUE}{len(synced)} Commands"
+        )
     except Exception as e:
         print(f"Error syncing commands: {e}")
         synced = []
     # Quota and notes output
     print(prfx + f"|| That is all for now. (Remove quota blocks for now)")
-    
+
     # Embed message
     embed = discord.Embed(title="Bot Startup Info • InDev", color=discord.Color.green())
     embed.add_field(name="Bot Name", value=bot.user.name, inline=True)
     embed.add_field(name="Bot ID", value=bot.user.id, inline=True)
-    embed.add_field(name="Runtime Information", value=f"Discord Version: {discord.__version__} || Python Version: {platform.python_version()}", inline=False)
+    embed.add_field(
+        name="Runtime Information",
+        value=f"Discord Version: {discord.__version__} || Python Version: {platform.python_version()}",
+        inline=False,
+    )
     embed.add_field(name="Synced Slash Commands", value=len(synced), inline=False)
-    embed.add_field(name="Notes", value="That is all for now. (Remove quota blocks for now).", inline=False)
-    
+    embed.add_field(
+        name="Notes",
+        value="That is all for now. (Remove quota blocks for now).",
+        inline=False,
+    )
+
     channel = bot.get_channel(1096146385830690866)  # Startup-channel ID
     await channel.send(embed=embed)
-with open('token.json', 'r') as f:
+
+
+with open("token.json", "r") as f:
     data = json.load(f)
-    TOKEN = data['TOKEN']
-
-@bot.event
-async def on_message(message):
-    if lmfao_event == True and message.author.id != 776226471575683082:
-        if message.content.lower() == "lmfao":
-            await message.reply("Who is Lmfao? 🤨\nHe's a hacker, he's a Chinese hacker.\nLmfao, he's working for the Koreans isn't he?")
-
-
-## DEV COMMANDS ##
-class MsgGrp(app_commands.Group):
-    pass
-messagegroup = MsgGrp(name="dev")
-bot.tree.add_command(messagegroup)
-
-@messagegroup.command(name="send_message", description="Sends a message to a specified channel")
-async def send_message(interaction:discord.Interaction, channel:discord.TextChannel, message:str):
-    if DEVACCESS(interaction.user):
-        await channel.send(message)
-        await interaction.response.send_message("Message sent!", ephemeral=True)
-@messagegroup.command(name="edit_message", description="Edits the latest message sent by the bot")
-async def edit_message(interaction:discord.Interaction, channel:discord.TextChannel, message:str):
-    if DEVACCESS(interaction.user):
-        async for msg in channel.history(limit=1):
-            if msg.author == bot.user:
-                await msg.edit(content=message)
-                await interaction.response.send_message("Message edited!", ephemeral=True)
-                break
-        else:
-            await interaction.response.send_message("No recent message from the bot found in this channel!", ephemeral=True)
-
-  
-
-# INFOBOARD COMMAND #
-class InfoboardOptions(discord.ui.Select):
-    def __init__(self):
-        options=[
-            discord.SelectOption(label="TRU Helper Infoboard", description="A list of all basic commands.", value="DHI"),
-            discord.SelectOption(label="Basic Commands", description="A list of all basic commands.", value="BC"),
-            discord.SelectOption(label="TRU Commands", description="A list of all commands available to TRU members.", value="DC"),
-            discord.SelectOption(label="Management Commands", description="A list of all commands available to TRUPC+.", value="MC"),
-            #discord.SelectOption(label="Squadrons Infoboard", description="Shows some general information about the server and squadrons.", value="SI")
-        ]
-        super().__init__(placeholder="Select a dropdown...", options=options, min_values=1, max_values=1)
-        
-    async def callback(self, interaction: discord.Interaction):
-        if self.values[0] == "DHI":
-            embed = discord.Embed(title="**<:TRU:1060271947725930496> TRU Helper Infoboard**", description="The TRU Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
-            embed.add_field(name="Credits", value="- Main developer: Blue\n- Bot host: Orange\n- Frontend Design: Blue, Shush & Polish\n- Bot testing: the suffering + Polish")
-            embed.set_footer(text="TRU Helper v.idk")
-            embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/lnHKwZ40MRhYKuNJpNUS8NQiaekqkgfW9TaGj-B5Yg0/https/tr.rbxcdn.com/580b2e0cd698decfa585464b50a4278c/150/150/Image/Png")
-        elif self.values[0] == "BC":
-            embed = discord.Embed(title="**Basic Commands**", description="All servers members can use these commands. They are represented by the color white.", color=BasiccommandCOL)
-            embed.add_field(name="**/whois**", value="Displays someones general and server informations.", inline=False)
-            embed.add_field(name="**/ping**", value="Shows the bot's response time in miliseconds.", inline=False)
-        elif self.values[0] == "DC":
-            embed = discord.Embed(title="**<:TRU:1060271947725930496> TRU Commands**", description="All TRU members PFC and above have access to these and are represented by the navy blue.", color=TRUCommandCOL)
-            embed.add_field(name="**/points overview**", value="Displays a leaderboard for points.", inline=False)
-            embed.add_field(name="**/points view**", value="View someone else's current point count.", inline=False)
-            embed.add_field(name="**/mypoints**", value="View your current point count.", inline=False)
-            embed.add_field(name="**/soup**", value="Adds or removes the Op. Supervisor Role. [EDS+]", inline=False)
-            #embed.add_field(name="**/rloa**", value="Coming soon:tm:...", inline=False)
-        elif self.values[0] == "MC":
-            embed = discord.Embed(title="**Management Commands**", description="TRU Pre-Command and above have access to these. They are represented by the color black.", color=HRCommandsCOL)
-            embed.add_field(name="**/points add/remove**", value="Adds/removes points to/from a user.", inline=False)
-            embed.add_field(name="**/points reset**", value="Resets the points of all users to zero.", inline=False)
-            embed.add_field(name="**/updatequota**", value="Updates the quota block number, start and end date.", inline=False)
-            embed.add_field(name="**/restart**", value="Restarts TRU Helper.", inline=False)
-            embed.add_field(name="**/shutdown**", value="Shuts down TRU Helper. [TRUCOMM+]", inline=False)
-        #elif self.values[0] == "SI":
-        #    embed = discord.Embed(title="**Server Info**")
-        
-        await interaction.response.edit_message(embed=embed)
-        
-class InfoboardView(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(InfoboardOptions())
-
-@bot.tree.command(name="infoboard",description="Shows bot information and a list of commands.")
-async def infoboard(interaction: discord.Interaction):
-    embed = discord.Embed(title="**TRU Helper Infoboard**", description="The TRU Helper mainly manages the points based quota system. Provided are infoboards with various commands and information related to the bot. See the dropdown menu below.", color=TRUCommandCOL)
-    embed.add_field(name="Credits", value="- Main developer: Blue\n- Bot host: Orange\n- Frontend Design: Blue, Shush & Polish\n- Bot testing: the suffering + Polish")
-    embed.set_footer(text="TRU Helper v.idk")
-    embed.set_thumbnail(url="https://images-ext-1.discordapp.net/external/lnHKwZ40MRhYKuNJpNUS8NQiaekqkgfW9TaGj-B5Yg0/https/tr.rbxcdn.com/580b2e0cd698decfa585464b50a4278c/150/150/Image/Png")
-    await interaction.response.send_message(embed=embed, view=InfoboardView())
-
+    TOKEN = data["TOKEN"]
 
 
 bot.run(TOKEN)
