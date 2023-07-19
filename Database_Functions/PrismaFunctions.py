@@ -51,7 +51,7 @@ async def set_active_block(block_num):
         data={"blockActive": False}
     )
     await db.quota_blocks.update(
-        where={"blockNum": block_num},
+        where={"blockNum": str(block_num)},
         data={"blockActive": True}
     )
     await db.disconnect()
@@ -341,6 +341,34 @@ async def fetch_log_by_id_for_user(operator:discord.Member, log_id:str):
     await db.disconnect()
     return log
 
+
+
+async def forceCancellog(user: discord.Member):
+    try:
+        db = Prisma()
+        await db.connect()
+        operative = await db.operative.find_unique(where={'discordID': str(user.id)})
+        
+        if operative is None:
+            return "User not found in the database!", False
+
+        log = None
+        
+        if not operative.activeLogID.startswith("NULL"):
+            try:
+                log = await db.logs.find_unique(where={'logID': str(operative.activeLogID)})
+                await db.logs.delete(where={'logID': str(log.logID)})
+            except Exception:
+                pass
+
+        await db.operative.update(
+            where={'discordID': str(user.id)},
+            data={'activeLog': False, 'activeLogID': f"NULL{random.randint(1000, 9999)}"})
+
+        return log, True
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return e, False
 
 
 ## ROLEBINDS

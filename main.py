@@ -40,7 +40,7 @@ start_time = datetime.now()
 
 async def accept_loa(interaction: discord.Interaction, message: discord.Message):
     # Check if the context menu is used in the designated LoA channel
-    loa_channel_id = 1121081165697265684  # bot-testing
+    loa_channel_id = 1095845251081568276  # bot-testing
     if message.channel.id != loa_channel_id:
         return await interaction.response.send_message(
             embed=embedBuilder(
@@ -89,7 +89,7 @@ async def accept_loa(interaction: discord.Interaction, message: discord.Message)
 
 async def end_loa(interaction: discord.Interaction, message: discord.Message):
     # Check if the context menu is used in the designated LoA channel
-    loa_channel_id = 1121081165697265684  # bot-testing
+    loa_channel_id = 1095845251081568276  # bot-testing
     if message.channel.id != loa_channel_id:
         return await interaction.response.send_message(
             embed=embedBuilder(
@@ -165,7 +165,7 @@ async def on_ready():
     await bot.add_cog(otherCmds(bot, start_time))
 
     # quota_cmds.py
-    await bot.add_cog(patrolCmds(bot))
+    #await bot.add_cog(patrolCmds(bot))
     await bot.add_cog(quotaCmds(bot))
     await bot.add_cog(viewdataCommand(bot))
     await bot.add_cog(quotablockCommands(bot))

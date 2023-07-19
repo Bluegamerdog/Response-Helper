@@ -1,5 +1,6 @@
 from trello import TrelloClient
 from datetime import datetime
+from fuzzywuzzy import fuzz
 
 TRELLO_API_KEY = "611905fd240d63a804e36a4fe7c9654e"
 TOKEN = "ATTA69143a1d63dd6eebe2b03a5715125045652f744b225c8f2fe7fe140e728a08c24D72615E"
@@ -52,7 +53,7 @@ def create_response_card(type: str, spontaneus: bool, due_date, ringleader_id):
     host = get_trello_id(ringleader_id)
 
     due_date_str = due_date_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    newCard = trellolist.add_card(name=f"{type} Response [Testing]", due=due_date_str)
+    newCard = trellolist.add_card(name=f"{type} Response", due=due_date_str)
     if host:
         ringleader = trello.get_member(get_trello_id(ringleader_id))
         newCard.add_member(ringleader)
@@ -105,7 +106,8 @@ def get_card_by_name_managmanetBoard(card_name):
 
         # Iterate over cards
         for card in cards:
-            if card.name == card_name:
+            similarity_ratio = fuzz.ratio(card_name, card.name)
+            if similarity_ratio >= 50:
                 # Get all comments on the card
                 return card
 
@@ -167,13 +169,14 @@ def get_card_comments(card_name):
 
         # Iterate over cards
         for card in cards:
-            if card.name == card_name:
+            similarity_ratio = fuzz.ratio(card_name, card.name)
+            if similarity_ratio >= 50:
+                print(str(similarity_ratio) +' | '+ card.name + ' ' + card_name)
                 # Get all comments on the card
                 comments = card.fetch_comments()
-
                 return comments
 
-    return None
+    return False
 
 
 def get_comments_timeframe(comments, unix_starttime, unix_endtime=None):

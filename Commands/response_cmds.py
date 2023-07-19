@@ -221,7 +221,10 @@ class ResponseSelect(discord.ui.Select):
                 repmsg: discord.Message = await channel.fetch_message(
                     int(selected_response.responseID)
                 )
-                add_cancelled_label(selected_response.trellocardID)
+                if not add_cancelled_label(selected_response.trellocardID):
+                    trellofailed = True
+                else:
+                    trellofailed = False
                 rep_ann = repmsg.embeds[0]
                 if selected_response.spontaneous == True:
                     rep_ann.title = f"<:trubotTRU:1096226111458918470> Spontaneus {selected_response.responseType} Response | Cancelled"
@@ -238,7 +241,9 @@ class ResponseSelect(discord.ui.Select):
                     embed=embedBuilder(
                         responseType="succ",
                         embedTitle="Response cancelled!",
-                        embedDesc=f"→ [Trello Card]({get_card_by_id(selected_response.trellocardID).short_url})",
+                        embedDesc=f"→ [Trello Card]({get_card_by_id(selected_response.trellocardID).short_url})"
+                        if trellofailed is False
+                        else "The Trello card associated with the response could not be found, and therefore not updated.",
                     ),
                     view=None,
                 )

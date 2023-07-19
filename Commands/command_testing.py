@@ -48,8 +48,19 @@ class testingCmds(commands.Cog):
 
     @app_commands.command(name="trello_testing", description="Testing trello functions")
     async def trello_testing(self, interaction:discord.Interaction, user:discord.Member = None, start_time:str = None, end_time:str = None):
-        return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
-        
+        if DEVACCESS(interaction.user):
+            return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+
+    @app_commands.command(name="forcecancel", description="Testing")
+    async def cancel_log_force(self, interaction:discord.Interaction, user:discord.Member):
+        if DEVACCESS(interaction.user):
+            #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+            results1, result2 = await forceCancellog(user)
+            if result2 == True:
+                embed = embedBuilder("succ", f"Log was cancelled and deleted.\n\n{results1}")
+            else:
+                embed = embedBuilder("err", f"{results1}")
+            return await interaction.response.send_message(embed=embed)
         
     @app_commands.command(name="text_testing", description="Previewing text and embeds")
     @app_commands.choices(rank=[
@@ -62,24 +73,26 @@ class testingCmds(commands.Cog):
     app_commands.Choice(name="Entrant", value="1"),])
     async def testing2(self, interaction:discord.Interaction, rank:app_commands.Choice[str]):
         #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True
-        await interaction.response.send_message(embed=discord.Embed(title="<a:trubotCelebration:1099643172012949555> TRU Promotion!", description=f"You have been promoted from **placeholder** to **{rank.name}**!\n\n{get_promotion_message(str(rank.name))}", color=DarkGreenCOL), ephemeral=True)
+        if DEVACCESS(interaction.user):
+            await interaction.response.send_message(embed=discord.Embed(title="<a:trubotCelebration:1099643172012949555> TRU Promotion!", description=f"You have been promoted from **placeholder** to **{rank.name}**!\n\n{get_promotion_message(str(rank.name))}", color=DarkGreenCOL), ephemeral=True)
         
 
 
     @app_commands.command(name="testing", description="Current: roblox group")
     async def testing3(self, interaction:discord.Interaction):
-        #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
-        group_id = 15155175  # Replace with your Roblox group ID
-        user_id = 334150937  # Replace with the user ID you want to check
+        if DEVACCESS(interaction.user):
+            #return await interaction.response.send_message("This command is currently not in use!", ephemeral=True)
+            group_id = 15155175  # Replace with your Roblox group ID
+            user_id = 334150937  # Replace with the user ID you want to check
 
-        last_update = get_last_rank_update(group_id, user_id)
-        if last_update is not None:
-            return await interaction.response.send_message(f"Last Rank Update: {last_update}", ephemeral=True )
-        else:
-            return await interaction.response.send_message("Failed to retrieve rank information.", ephemeral=True)
-        
-        #uotadata = await get_all_quota_data()
-        #await interaction.response.send_message(f"{quotadata}", ephemeral=True)
+            last_update = get_last_rank_update(group_id, user_id)
+            if last_update is not None:
+                return await interaction.response.send_message(f"Last Rank Update: {last_update}", ephemeral=True )
+            else:
+                return await interaction.response.send_message("Failed to retrieve rank information.", ephemeral=True)
+            
+            #uotadata = await get_all_quota_data()
+            #await interaction.response.send_message(f"{quotadata}", ephemeral=True)
         
         
         

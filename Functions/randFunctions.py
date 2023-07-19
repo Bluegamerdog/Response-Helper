@@ -53,4 +53,8 @@ def get_promotion_message(rank_name):
     message = f"{unlocks.get(rank_name, 'Unknown')}"
     return message
 
+def is_valid_profile_link(profilelink: str) -> bool:
+    # Regular expression pattern for matching Roblox profile links
+    pattern = r"^https?://www\.roblox\.com/users/\d+/profile$"
+    return bool(re.match(pattern, profilelink))
 
