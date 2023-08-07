@@ -194,8 +194,9 @@ class viewdataCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.client = bot
     
-    @app_commands.command(name="viewstatus",description="View someones current quota status.")
-    async def mypoints(self, interaction: discord.Interaction, member:discord.Member=None):
+    @app_commands.command(name="quotastatus",description="View your own of someone else's current quota status.")
+    @app_commands.describe(member="Who's quota activity you would like to view. [Optional]", quota_block="From which quota block you'd like to see the activity from.")
+    async def quota_status(self, interaction: discord.Interaction, member:discord.Member=None, quota_block:str=None):
         await interaction.response.defer(thinking=True)
         try:
             if member==None:
@@ -211,6 +212,24 @@ class viewdataCommand(commands.Cog):
                 quotaBlock = await get_quotablock()
                 comments = get_card_comments(requested_operator.userName)
                 operator_quota = await get_quota_by_rank(requested_operator.rank)
+                
+        
+                # Check if quota_block is provided and valid
+                if quota_block:
+                    try:
+                        quota_block = int(quota_block)
+                    except ValueError:
+                        quota_block = None
+                            # If quota_block is provided and valid, get the specific quota block
+                
+                if quota_block:
+                    quotaBlock = await get_quotablock(block_num=quota_block)
+                    if not quotaBlock:
+                        return await interaction.edit_original_response(embed=embedBuilder("err", embedDesc=f"Quota block {quota_block} not found.", embedTitle="Invalid quota block"))     
+
+                if not quota_block or not quotaBlock:
+                    quotaBlock = await get_quotablock()
+                
                 if comments is False:
                     responses_attended = f"No card named \n`{requested_operator.userName}` found!"
                 else:
