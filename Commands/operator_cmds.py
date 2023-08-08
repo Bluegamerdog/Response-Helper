@@ -17,7 +17,7 @@ from Database_Functions.UserdbFunction import *
 from Functions.formattingFunctions import embedBuilder
 from Functions.mainVariables import *
 from Functions.randFunctions import (change_nickname, get_user_id_from_link,
-                                     in_roblox_group, get_promotion_message)
+                                     in_roblox_group, get_promotion_message, is_valid_profile_link)
 from Functions.rolecheckFunctions import *
 
 roblox_client = Client("_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_D5064A0C1DB1D5FD5C66ED677C3B797A10523AEE48D18912BB5D6F2E08BE04F39C4E056585CDE8C410971D4BE9C674A66E86C9BD29BBC99B41A5720149F0C5B2C16FF8088846DDB8004B1C206F0B3FB837A4263111612CA93E448C7AC999EC9D326AB762CB74A7BB0B8D246F192BAC4C5139D77CC634D9C3F06A836D43712B6FA65E7DD315AB471C41A0CDD683A633624BFE8A91DD3BA85F34612556A0525401AD16743318C61B208D1A894FFAB372E157342BF65B78E06FB33543F74A8A600256582EBA8A56062BEA431246332E270A4EA1F77B811BBB7678C3A10020251B8FBF3D015BD391A219400A803A9A07B5B971785639B08E9F1E85230E630D7D1680E1AA7D9815C4C9DA3D9FE5064EFECDB50123CD8E6E7A7527624721D77F7D2542B833E49C14F35356C57F74AF16B4A2E553BBB56B1398F7F8F8F4E141C149D7499DE92ABFDA759F3634D395FB1333BC1F2709919B573DE87E1ED3412022B26BEF5544DD44F23BFE968E6BA37DCCDA3B87060A1930")
@@ -33,6 +33,14 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
             
             if user and user != interaction.user and not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
                 return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="Only TRU leadership and above may register other users."))
+
+                    # Check if the profile link is a valid Roblox profile link
+            if not is_valid_profile_link(profilelink):
+                return await interaction.response.send_message(embed=embedBuilder(responseType="err", embedDesc="Invalid Roblox profile link. Please provide a valid link."))
+            
+            if await getOperator(user.id if user else interaction.user.id):
+                return await interaction.response.send_message(embed=embedBuilder(responseType="err", embedDesc=f"{user.mention} is already registered." if user else f"You are already registered"))
+            
             Operative = user if user else interaction.user
             roblox_user = await roblox_client.get_user(get_user_id_from_link(profilelink))
             dbResponse = await registerOperator(Operative, profilelink, roblox_user.name)
@@ -181,14 +189,18 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
         #Defer
         await interaction.response.defer(thinking=True, ephemeral=True)
         AuditLogs_channel = interaction.guild.get_channel(1095835491485622323) #Audit Logs
-        tru_on_duty_channel = interaction.guild.get_channel(1121081165697265684) #bot-testing
+        tru_on_duty_channel = interaction.guild.get_channel(1095845193149862028) #bot-testing
         
     
         await member.edit(nick=change_nickname(requested_rank.rankName, requestedRobloxUser.name)) # Change nickname
         await member.add_roles(interaction.guild.get_role(int(requested_rank.discordRoleID))) # Discord role add
         await member.remove_roles(interaction.guild.get_role(int(current_rank.discordRoleID))) # Discord role remove
         await updateOperator_rank(member, requested_rank.rankName) # Database update
-        await TRU_ROBLOX_group.get_member(requestedRobloxUser.id).set_rank(int(requested_rank.RobloxRankID)) # Roblox group update
+        try:
+            await TRU_ROBLOX_group.get_member(requestedRobloxUser.id).set_rank(int(requested_rank.RobloxRankID)) # Roblox group update
+        except Exception as e:
+            error_embed = embedBuilder("err", f"{e}" ,"ROBLOX Rank Error")
+            return await interaction.response.send_message(embed=error_embed, ephemeral=True)
         
         
         if int(current_rank.RobloxRankID) < int(requested_rank.RobloxRankID): #Promotion
@@ -202,7 +214,7 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
                 
                 await AuditLogs_channel.send(embed = audit_log)
                 await member.send(embed=dm_notification)
-                await tru_on_duty_channel.send(f"Please congragulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
+                await tru_on_duty_channel.send(f"Please congratulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
                 return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion Successful!", description=f"{member.mention} has been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
             except Exception as e:
                 print(e)

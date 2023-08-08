@@ -32,6 +32,11 @@ def change_nickname(new_rank_name, current_nick):
     return new_nick
 
 
+def extract_user_ids(mention_string):
+    mention_list = mention_string.split("<")
+    user_ids = [mention.strip(" @!>") for mention in mention_list]
+    return user_ids
+
 async def getHighestRole(discordUser: discord.Member):
     roles = discordUser.roles
     roles.sort(reverse=True, key=lambda r: r.position)  # Sort roles in descending order of position
@@ -53,4 +58,8 @@ def get_promotion_message(rank_name):
     message = f"{unlocks.get(rank_name, 'Unknown')}"
     return message
 
+def is_valid_profile_link(profilelink: str) -> bool:
+    # Regular expression pattern for matching Roblox profile links
+    pattern = r"^https?://www\.roblox\.com/users/\d+/profile$"
+    return bool(re.match(pattern, profilelink))
 

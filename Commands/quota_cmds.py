@@ -211,16 +211,22 @@ class viewdataCommand(commands.Cog):
                 quotaBlock = await get_quotablock()
                 comments = get_card_comments(requested_operator.userName)
                 operator_quota = await get_quota_by_rank(requested_operator.rank)
+                if comments is False:
+                    responses_attended = f"No card named \n`{requested_operator.userName}` found!"
+                else:
+                    responses_attended = f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}/{operator_quota.responseRequirement}" \
+                                        if operator_quota and (operator_quota.responseRequirement and operator_quota.quotaActive is True and str(operator_quota.responseRequirement) != "None") \
+                                        and userOnLoA(member) is False \
+                                        else f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}"
+                    
+                
                 
                 embed = embedBuilder("succ", embedTitle=f"User found!", embedDesc=f"Displaying {member.mention}'s data for block **{quotaBlock.blockNum}**.")
                 embed.add_field(name="TRU Rank", value=f"> {requested_operator.rank}", inline=True)
                 embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if userOnLoA(member) else f"> On Active Duty", inline=True)
                 embed.add_field(name="", value="", inline=False) # Filler for 2x2 field config because discord
                 embed.add_field(name="Responses Attended",
-                                value=f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}/{operator_quota.responseRequirement}"
-                                if operator_quota and (operator_quota.responseRequirement and operator_quota.quotaActive is True and str(operator_quota.responseRequirement) != "None")
-                                and userOnLoA(member) is False
-                                else f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}",
+                                value=responses_attended,
                                 inline=True)
 
                 embed.add_field(name="Patrols Logged",
