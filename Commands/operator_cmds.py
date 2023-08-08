@@ -29,7 +29,7 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
     @app_commands.command(name="register", description="Add a new operator to the registry.")
     async def operative_register(self, interaction: discord.Interaction, profilelink: str, user:discord.Member=None):
         serverConfig = await fetch_config(interaction=interaction)
-        if checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.logPermissionRole))):
+        if TRUMember(user=interaction.user):
             
             if user and user != interaction.user and not checkPermission(interaction.user.top_role, interaction.guild.get_role(int(serverConfig.commandRole))):
                 return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc="Only TRU leadership and above may register other users."))
@@ -153,7 +153,6 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
     @app_commands.command(name="rank", description="Used to promote/demoted TRU members.")
     @app_commands.describe(member="Who are you ranking?", rank="To what rank?", reason="[DEMOTIONS ONLY] Why are they being demoted?")
     @app_commands.choices(rank=[
-    app_commands.Choice(name="totally a real rank", value="25"),
     app_commands.Choice(name="Vanguard Officer", value="20"),
     app_commands.Choice(name="Vanguard", value="15"),
     app_commands.Choice(name="Elite Operator", value="5"),
@@ -173,21 +172,27 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
         current_rank = await fetch_rolebind(rankName=ranked_operative.rank)
         if not current_rank: # If no rolebind is found in the database for the users current rank
             return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="Rolebind not found!", embedDesc=f"Could not find a rolebind for {member.mention}'s current rank!\n`Rank without rolebind: '{ranked_operative.rank}'`"), ephemeral=True)
+        
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        
         #Ranking Errors
         if int(current_rank.RobloxRankID) == int(requested_rank.RobloxRankID): # Cant promote to current rank
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="While ranking..." , embedDesc=f"{member.mention} is already ranked as **{requested_rank.rankName}**."), ephemeral=True)
+            return await interaction.edit_original_response(embed = embedBuilder(responseType="err", embedTitle="While ranking..." , embedDesc=f"{member.mention} is already ranked as **{requested_rank.rankName}**."))
         if int(current_rank.RobloxRankID) >= 250 and int(requested_rank.RobloxRankID) < 250: # Cant demote TRU Leadership
-            return await interaction.response.send_message(embed = embedBuilder(responseType="perms", embedDesc=f"Blue said I can't demote TRU Leadership or above. {member.mention} is a member of TRU Leadership or above."))
+            return await interaction.edit_original_response(embed = embedBuilder(responseType="perms", embedDesc=f"Blue said I can't demote TRU Leadership or above. {member.mention} is a member of TRU Leadership or above."))
+       
+       
         
         #roblox_client Group
+        
         TRU_ROBLOX_group = await roblox_client.get_group(15155175)
         group_members = await TRU_ROBLOX_group.get_members().flatten()
         requestedRobloxUser = await roblox_client.get_user(get_user_id_from_link(ranked_operative.profileLink))
         if in_roblox_group(group_members, requestedRobloxUser) is False:
-            return await interaction.response.send_message(embed = embedBuilder(responseType="err", embedTitle="ROBLOX Group", embedDesc=f"Could not find {member.mention} to be a member of the `{TRU_ROBLOX_group.name}` roblox group. ([Roblox Group Link](https://www.roblox_client.com/groups/15155175/QSO-Tactical-Response-Unit))"), ephemeral=True)
+            return await interaction.edit_original_response(embed = embedBuilder(responseType="err", embedTitle="ROBLOX Group", embedDesc=f"Could not find {member.mention} to be a member of the `{TRU_ROBLOX_group.name}` roblox group. ([Roblox Group Link](https://www.roblox_client.com/groups/15155175/QSO-Tactical-Response-Unit))"))
         
         #Defer
-        await interaction.response.defer(thinking=True, ephemeral=True)
+        
         AuditLogs_channel = interaction.guild.get_channel(1095835491485622323) #Audit Logs
         tru_on_duty_channel = interaction.guild.get_channel(1095845193149862028) #bot-testing
         
@@ -200,7 +205,11 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
             await TRU_ROBLOX_group.get_member(requestedRobloxUser.id).set_rank(int(requested_rank.RobloxRankID)) # Roblox group update
         except Exception as e:
             error_embed = embedBuilder("err", f"{e}" ,"ROBLOX Rank Error")
+<<<<<<< HEAD
             return await interaction.response.send_message(embed=error_embed, ephemeral=True)
+=======
+            return await interaction.edit_original_response(embed=error_embed)
+>>>>>>> 599bf9bc69918ccd52dd81d3b20c91f9273648b5
         
         
         if int(current_rank.RobloxRankID) < int(requested_rank.RobloxRankID): #Promotion
@@ -213,8 +222,16 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
                 audit_log.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
                 
                 await AuditLogs_channel.send(embed = audit_log)
+<<<<<<< HEAD
                 await member.send(embed=dm_notification)
                 await tru_on_duty_channel.send(f"Please congratulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
+=======
+                await tru_on_duty_channel.send(f"Please congratulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
+                try:
+                    await member.send(embed=dm_notification)
+                except Exception as a:
+                    return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion Successful!", description=f"{member.mention} has been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.\n\n*Could not DM user.*", color=SuccessCOL))
+>>>>>>> 599bf9bc69918ccd52dd81d3b20c91f9273648b5
                 return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion Successful!", description=f"{member.mention} has been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
             except Exception as e:
                 print(e)
@@ -230,8 +247,11 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
                 audit_log.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
                 
                 await AuditLogs_channel.send(embed = audit_log)
-                await member.send(embed=dm_notification)
-                return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Demotion Successful!", description=f"{member.mention} has been demoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
+                await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Demotion Successful!", description=f"{member.mention} has been demoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
+                try:
+                    await member.send(embed=dm_notification)
+                except Exception as e:
+                    pass
             except Exception as e:
                 print(e)
                 embed = embedBuilder(responseType="err", embedTitle="While demoting...", embedDesc=f"{e}")

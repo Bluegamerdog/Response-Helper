@@ -20,7 +20,6 @@ from Commands.bot_cmds import botCmds, serverconfigCmds, rolebindCmds
 from Commands.command_testing import testingCmds, oldpatrolCmds
 from Commands.misc_cmds import otherCmds
 from Commands.quota_cmds import (
-    patrolCmds,
     viewdataCommand,
     quotaCmds,
     quotablockCommands,
@@ -165,7 +164,10 @@ async def on_ready():
     await bot.add_cog(otherCmds(bot, start_time))
 
     # quota_cmds.py
+<<<<<<< HEAD
     #await bot.add_cog(patrolCmds(bot))
+=======
+>>>>>>> 599bf9bc69918ccd52dd81d3b20c91f9273648b5
     await bot.add_cog(quotaCmds(bot))
     await bot.add_cog(viewdataCommand(bot))
     await bot.add_cog(quotablockCommands(bot))

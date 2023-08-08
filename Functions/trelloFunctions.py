@@ -1,7 +1,10 @@
 from trello import TrelloClient
 from datetime import datetime
 from fuzzywuzzy import fuzz
+<<<<<<< HEAD
 import time
+=======
+>>>>>>> 599bf9bc69918ccd52dd81d3b20c91f9273648b5
 
 TRELLO_API_KEY = "611905fd240d63a804e36a4fe7c9654e"
 TOKEN = "ATTA69143a1d63dd6eebe2b03a5715125045652f744b225c8f2fe7fe140e728a08c24D72615E"
@@ -53,7 +56,11 @@ def create_response_card(type: str, spontaneus: bool, due_date, ringleader_id):
     host = get_trello_id(ringleader_id)
 
     due_date_str = due_date_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+<<<<<<< HEAD
     newCard = trellolist.add_card(name=f"[InDev Bot] {type} Response", due=due_date_str)
+=======
+    newCard = trellolist.add_card(name=f"{type} Response", due=due_date_str)
+>>>>>>> 599bf9bc69918ccd52dd81d3b20c91f9273648b5
     if host:
         ringleader = trello.get_member(get_trello_id(ringleader_id))
         newCard.add_member(ringleader)
