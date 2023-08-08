@@ -42,6 +42,12 @@ async def getHighestRole(discordUser: discord.Member):
 
     return ""  # Return an empty string if no valid role is found
 
+def extract_user_ids(mention_string):
+    mention_list = mention_string.split("<")
+    user_ids = [mention.strip(" @!>") for mention in mention_list]
+    return user_ids
+
+
 def get_promotion_message(rank_name):
     unlocks = {
         "Operator": "Congratulations on your promotion to Operator (OPR)! As an Operator, you perform the most basic TRU duties in the field. You have shown progress and gained valuable experience. Enjoy free use of the Desert Eagle, a symbol of your proficiency. Your journey as an operator has just begun, and there is much to learn and accomplish. Continue to grow and develop your skills.",

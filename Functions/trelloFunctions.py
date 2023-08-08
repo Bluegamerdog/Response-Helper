@@ -1,6 +1,7 @@
 from trello import TrelloClient
 from datetime import datetime
 from fuzzywuzzy import fuzz
+import time
 
 TRELLO_API_KEY = "611905fd240d63a804e36a4fe7c9654e"
 TOKEN = "ATTA69143a1d63dd6eebe2b03a5715125045652f744b225c8f2fe7fe140e728a08c24D72615E"
@@ -41,7 +42,6 @@ trello_day_dict = {
 
 
 def create_response_card(type: str, spontaneus: bool, due_date, ringleader_id):
-    print(due_date)
     due_date_datetime = datetime.utcfromtimestamp(due_date)
     weekday = due_date_datetime.strftime("%A")
     if weekday in trello_day_dict:
@@ -112,6 +112,45 @@ def get_card_by_name_managmanetBoard(card_name):
                 return card
 
     return None
+
+def get_card_by_name_activityBoard(card_name):
+    lists = memberactivityBoard.list_lists()
+    if card_name == "Blue":
+        card_name = "Bluegamerdog"
+    if card_name == "Ellusive":
+        card_name = "EllusiveTM"
+    # Iterate over lists
+    for trello_list in lists:
+        cards = trello_list.list_cards()
+
+        # Iterate over cards
+        for card in cards:
+            similarity_ratio = fuzz.ratio(card_name, card.name)
+            if similarity_ratio >= 50:
+                # Get all comments on the card
+                return card
+
+    return None
+
+def add_log_comment(username: str, co_host: bool, host: str, response_type: str, spontaneous:bool):
+    time_attended = time.strftime("%m/%d/%Y", time.localtime())  # Format timestamp as MM/DD/YYYY
+    operator_card = get_card_by_name_activityBoard(username)
+    
+    if operator_card:
+        print(time_attended, operator_card.name, co_host, host, response_type, spontaneous)
+        comment_text = f"{time_attended} - {'Co-hosted' if co_host is True else 'Attended'}{' a spontaneous ' if spontaneous is True else ' a '}{response_type} Response (Host: {host})"
+        print(username, comment_text)
+        
+        try:
+            operator_card.comment(comment_text=comment_text)
+            print("Comment added successfully.")
+            return True
+        except Exception as e:
+            print(f"Error adding comment: {e}")
+            return e
+    else:
+        print(f"Card not found for user: {username}")
+        return False
 
 
 def add_loa_label(card_id):

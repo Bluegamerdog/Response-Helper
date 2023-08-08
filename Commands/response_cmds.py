@@ -124,7 +124,7 @@ class CommenceAnnouncemenetButtons(discord.ui.View):
             int(self.selected_rep_id.responseID)
         )
         rep_ann = repmsg.embeds[0]
-        rep_ann.title = f"<:trubotTRU:1096226111458918470> {self.selected_rep_id.responseType} Response | Ongoing"
+        rep_ann.description = f"### <:trubotTRU:1096226111458918470> {self.selected_rep_id.responseType} Response | Ongoing"
         trurole: discord.Role = interaction.guild.get_role(
             int(serverConfig.announceRole)
         )
@@ -186,18 +186,18 @@ class ResponseSelect(discord.ui.Select):
                     interaction, int(self.values[0])
                 )
                 test_ann = discord.Embed(
-                    title=f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response is now commencing!",
+                    description=f"### <:trubotTRU:1096226111458918470> {selected_response.responseType} Response is now commencing!",
                     color=TRUCommandCOL,
                 )
                 test_ann.add_field(
-                    name="Response Leader",
+                    name="Response Leader:",
                     value=f"{interaction.user.mention}",
                     inline=False,
                 )
                 resposne_leader = await getOperator(interaction.user.id)
                 test_ann.add_field(
-                    name="Details",
-                    value=f"➥**Join link:** {resposne_leader.profileLink}\n➥**Voice Channel:** <#{self.vc_id}>\n➥**Status:** {self.status}",
+                    name="Response Details",
+                    value=f"> __Join link__: {resposne_leader.profileLink}\n> __Voice Channel__: <#{self.vc_id}>\n> __Status__: {self.status}",
                     inline=False,
                 )
                 await interaction.response.edit_message(
@@ -227,15 +227,15 @@ class ResponseSelect(discord.ui.Select):
                     trellofailed = False
                 rep_ann = repmsg.embeds[0]
                 if selected_response.spontaneous == True:
-                    rep_ann.title = f"<:trubotTRU:1096226111458918470> Spontaneus {selected_response.responseType} Response | Cancelled"
+                    rep_ann.description = f"### <:trubotTRU:1096226111458918470> Spontaneus {selected_response.responseType} Response | Cancelled"
                 else:
-                    rep_ann.title = f"<:trubotTRU:1096226111458918470> {selected_response.responseType} Response | Cancelled"
+                    rep_ann.description = f"### <:trubotTRU:1096226111458918470> {selected_response.responseType} Response | Cancelled"
                 can_ann = discord.Embed(
-                    description=f"{interaction.user.mention}**'s {selected_response.responseType} response has been cancelled!**\n\n**Reason:** {self.reason}"
-                    if self.reason
-                    else f"{interaction.user.mention}**'s {selected_response.responseType} response has been cancelled!**",
+                    description=f"### {interaction.user.mention}'s {selected_response.responseType} response has been cancelled!",
                     color=TRUCommandCOL,
                 )
+                if self.reason:
+                    can_ann.add_field(name="Reason:", value=f"{self.reason}")
                 await cancelResponse(interaction, str(selected_response.responseID))
                 await interaction.edit_original_response(
                     embed=embedBuilder(
@@ -320,16 +320,16 @@ class ScheduleModal(ui.Modal, title="Scheduled Response Announcement"):
                 int(serverConfig.announceChannel)
             )
             repann = discord.Embed(
-                title=f"<:trubotTRU:1096226111458918470> {self.type} Response | Scheduled",
+                description=f"### <:trubotTRU:1096226111458918470> {self.type} Response | Scheduled",
                 color=TRUCommandCOL,
             )
-            repann.add_field(name="Time", value=f"<t:{self.start_time}>", inline=False)
+            repann.add_field(name="Time & Date:", value=f"<t:{self.start_time}>", inline=False)
             repann.add_field(
-                name="Response Leader",
+                name="Response Leader:",
                 value=f"{interaction.user.mention}",
                 inline=False,
             )
-            repann.add_field(name="Notes", value=f"{self.notes}", inline=False)
+            repann.add_field(name="Notes:", value=f"{self.notes}", inline=False)
             await interaction.response.send_message(
                 embed=repann,
                 ephemeral=True,
@@ -555,15 +555,15 @@ class responseCmds(commands.GroupCog, group_name="response"):
         )
         response_leader = await getOperator(interaction.user.id)
         repann = discord.Embed(
-            title=f"<:trubotTRU:1096226111458918470> Spontaneous {rep_type.value} Response | Ongoing",
+            description=f"### <:trubotTRU:1096226111458918470> Spontaneous {rep_type.value} Response | Ongoing",
             color=TRUCommandCOL,
         )
         repann.add_field(
-            name="Response Leader", value=f"{interaction.user.mention}", inline=False
+            name="Response Leader:", value=f"{interaction.user.mention}", inline=False
         )
         repann.add_field(
-            name="Details:",
-            value=f"➥**Join link:** {response_leader.profileLink}\n➥**Voice Channel:** <#{vc.value}>\n➥**Status:** {status}",
+            name="Response Details:",
+            value=f"> __Join link__: {response_leader.profileLink}\n> __Voice Channel__: <#{vc.value}>\n> __Status__: {status}",
             inline=False,
         )
         trurole: discord.Role = interaction.guild.get_role(
@@ -677,8 +677,9 @@ class responseCmds(commands.GroupCog, group_name="response"):
     @app_commands.command(
         name="conclude", description="Used to conclude an operations."
     )
+    @app_commands.describe(attendees='If somehow you had no attendees, just type "none" or "null".')
     async def conclude(
-        self, interaction: discord.Interaction, picture: discord.Attachment
+        self, interaction: discord.Interaction, picture: discord.Attachment, attendees:str, co_hosts:str=None
     ):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(
@@ -710,23 +711,94 @@ class responseCmds(commands.GroupCog, group_name="response"):
             )
             rep_ann = repmsg.embeds[0]
             if response_data.spontaneous == True:
-                rep_ann.title = f"<:trubotTRU:1096226111458918470> Spontaneous {response_data.responseType} Response | Concluded"
+                rep_ann.description = f"### <:trubotTRU:1096226111458918470> Spontaneous {response_data.responseType} Response | Concluded"
             else:
-                rep_ann.title = f"<:trubotTRU:1096226111458918470> {response_data.responseType} Response | Concluded"
+                rep_ann.description = f"### <:trubotTRU:1096226111458918470> {response_data.responseType} Response | Concluded"
             con_ann = discord.Embed(
-                description=f"{interaction.user.mention}'s {response_data.responseType} response has concluded!",
+                description=f"### {interaction.user.mention}'s {response_data.responseType} Response has concluded!",
                 color=TRUCommandCOL,
             )
+            con_ann.set_image(url=picture.url)
             await repmsg.edit(embed=rep_ann)
             await repmsg.reply(embed=con_ann)
+            await concludeResponse(interaction, str(response_data.responseID))
+            
+            if get_card_by_id(response_data.trellocardID):
+                trellocardlink = get_card_by_id(response_data.trellocardID).short_url
+                trellolink_found = True
+            else:
+                trellocardlink = "Error fetching the Trello card."
+                trellolink_found = False
+            
             await interaction.edit_original_response(
                 embed=embedBuilder(
                     responseType="succ",
                     embedTitle="Response concluded!",
-                    embedDesc=f"→ [Trello Card]({get_card_by_id(response_data.trellocardID).short_url})",
+                    embedDesc=f"{'→ [Trello Card](' + trellocardlink + ')' if trellolink_found else ''}\nLogging all attendees, please wait...",
                 )
             )
-            await concludeResponse(interaction, str(response_data.responseID))
+            
+            ## Logging
+            
+            if str(attendees) != "none" or str(attendees) != "null" or co_hosts:
+                attendee_mentions = []  # List to store mentioned attendees
+                co_host_mentions = []   # List to store mentioned co-hosts
+                failed_users = [] 
+
+                if attendees and attendees != "none" and attendees != "null":
+                    attendee_mentions = extract_user_ids(attendees)
+                    attendee_mentions = list(filter(None, attendee_mentions))
+
+                if co_hosts:
+                    co_host_mentions = extract_user_ids(co_hosts)
+                    co_host_mentions = list(filter(None, co_host_mentions))
+
+ 
+                # Now you can use attendee_mentions and co_host_mentions lists to perform actions
+                # For example, you can iterate through them using a loop
+                
+                for attendee_id in attendee_mentions:
+                    attendee = interaction.guild.get_member(int(attendee_id))
+                    if attendee:
+                        operator = await getOperator(attendee.id)
+                        if not add_log_comment(
+                            username=str(operator.userName),
+                            co_host=False,
+                            host=str(interaction.user.nick),
+                            response_type=str(response_data.responseType),
+                            spontaneous=response_data.spontaneous,
+                        ):
+                            failed_users.append(attendee.display_name)
+
+                for co_host_id in co_host_mentions:
+                    co_host = interaction.guild.get_member(int(co_host_id))
+                    if co_host:
+                        operator = await getOperator(co_host.id)
+                        
+                        if not add_log_comment(
+                            username=str(operator.userName),
+                            co_host=True,
+                            host=str(interaction.user.nick),
+                            response_type=str(response_data.responseType),
+                            spontaneous=response_data.spontaneous,
+                        ):
+                            failed_users.append(co_host.display_name)
+            
+                if failed_users:
+                    failed_users_text = ", ".join(failed_users)
+                    failed_users_response = f"Failed to add comments for: {failed_users_text}"
+                else:
+                    failed_users_response = "All comments added successfully."
+                
+                await interaction.followup.send(
+                    embed=embedBuilder(
+                        responseType="cust",
+                        embedTitle="Logging Information!",
+                        embedDesc=f"{failed_users_response}",
+                        embedColor=SuccessCOL
+                    ), ephemeral=True
+                )
+            
         else:
             await interaction.response.send_message(
                 embed=embedBuilder(
@@ -736,6 +808,7 @@ class responseCmds(commands.GroupCog, group_name="response"):
                 ),
                 ephemeral=True,
             )
+            
 
     @app_commands.command(
         name="cancel", description="Used to cancel an existing operation."
