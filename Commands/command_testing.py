@@ -62,6 +62,8 @@ class testingCmds(commands.Cog):
                 embed = embedBuilder("err", f"{results1}")
             return await interaction.response.send_message(embed=embed)
         
+        
+        
     @app_commands.command(name="text_testing", description="Previewing text and embeds")
     @app_commands.choices(rank=[
     app_commands.Choice(name="totally a real rank", value="25"),
@@ -85,27 +87,14 @@ class testingCmds(commands.Cog):
             group_id = 15155175  # Replace with your Roblox group ID
             user_id = 334150937  # Replace with the user ID you want to check
 
-            last_update = get_last_rank_update(group_id, user_id)
-            if last_update is not None:
-                return await interaction.response.send_message(f"Last Rank Update: {last_update}", ephemeral=True )
-            else:
-                return await interaction.response.send_message("Failed to retrieve rank information.", ephemeral=True)
-            
-            #uotadata = await get_all_quota_data()
-            #await interaction.response.send_message(f"{quotadata}", ephemeral=True)
-            
-    @app_commands.command(name="rankfix", description="na")
-    @app_commands.choices(rankname=[
-        app_commands.Choice(name="Vanguard Officer", value="20"),
-        app_commands.Choice(name="Vanguard", value="15"),
-        app_commands.Choice(name="Elite Operator", value="5"),
-        app_commands.Choice(name="Senior Operator", value="4"),
-        app_commands.Choice(name="Operator", value="3"),
-        app_commands.Choice(name="Entrant", value="1"),])
-    async def test12(self, interaction:discord.Interaction, member:discord.Member, rankname:app_commands.Choice[str]):
-        if DEVACCESS(interaction.user):
-            await updateOperator_rank(member, rankname.name) # Database update
-            await interaction.response.send_message("Success", ephemeral=True)
+        last_update = get_last_rank_update(group_id, user_id)
+        if last_update is not None:
+            return await interaction.response.send_message(f"Last Rank Update: {last_update}", ephemeral=True )
+        else:
+            return await interaction.response.send_message("Failed to retrieve rank information.", ephemeral=True)
+        
+        #uotadata = await get_all_quota_data()
+        #await interaction.response.send_message(f"{quotadata}", ephemeral=True)
         
         
         

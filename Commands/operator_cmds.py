@@ -218,11 +218,8 @@ class operatorCmds(commands.GroupCog, group_name='operator'):
                 audit_log.set_footer(icon_url=interaction.user.avatar, text=f"Processed by {interaction.user.display_name}  •  {datetime.datetime.now().strftime('%d.%m.%y')}")
                 
                 await AuditLogs_channel.send(embed = audit_log)
-                await tru_on_duty_channel.send(f"Please congratulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
-                try:
-                    await member.send(embed=dm_notification)
-                except Exception as a:
-                    return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion Successful!", description=f"{member.mention} has been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.\n\n*Could not DM user.*", color=SuccessCOL))
+                await member.send(embed=dm_notification)
+                await tru_on_duty_channel.send(f"Please congragulate **{member.display_name}** on their promotion to **{requested_rank.rankName}**! <a:trubotCelebration:1099643172012949555>")
                 return await interaction.edit_original_response(embed=discord.Embed(title="<:trubotAccepted:1096225940578766968> Promotion Successful!", description=f"{member.mention} has been promoted from **{current_rank.rankName}** to **{requested_rank.rankName}**.", color=SuccessCOL))
             except Exception as e:
                 print(e)
