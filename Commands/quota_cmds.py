@@ -77,6 +77,33 @@ class viewdataCommand(commands.Cog):
                     
                 
                 
+        
+                # Check if quota_block is provided and valid
+                if quota_block:
+                    try:
+                        quota_block = int(quota_block)
+                    except ValueError:
+                        quota_block = None
+                            # If quota_block is provided and valid, get the specific quota block
+                
+                if quota_block:
+                    quotaBlock = await get_quotablock(block_num=quota_block)
+                    if not quotaBlock:
+                        return await interaction.edit_original_response(embed=embedBuilder("err", embedDesc=f"Quota block {quota_block} not found.", embedTitle="Invalid quota block"))     
+
+                if not quota_block or not quotaBlock:
+                    quotaBlock = await get_quotablock()
+                
+                if comments is False:
+                    responses_attended = f"No card named \n`{requested_operator.userName}` found!"
+                else:
+                    responses_attended = f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}/{operator_quota.responseRequirement}" \
+                                        if operator_quota and (operator_quota.responseRequirement and operator_quota.quotaActive is True and str(operator_quota.responseRequirement) != "None") \
+                                        and userOnLoA(member) is False \
+                                        else f"> {get_comments_timeframe(comments, quotaBlock.unix_starttime)}"
+                    
+                
+                
                 embed = embedBuilder("succ", embedTitle=f"User found!", embedDesc=f"Displaying {member.mention}'s data for block **{quotaBlock.blockNum}**.")
                 embed.add_field(name="TRU Rank", value=f"> {requested_operator.rank}", inline=True)
                 embed.add_field(name="Activity Status", value=f"> On Leave of Absence" if userOnLoA(member) else f"> On Active Duty", inline=True)
