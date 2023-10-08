@@ -17,10 +17,8 @@ from discord.ext import commands
 from Functions.mainVariables import *
 from Functions.rolecheckFunctions import *
 from Commands.bot_cmds import botCmds, serverconfigCmds, rolebindCmds
-from Commands.command_testing import testingCmds, oldpatrolCmds
-from Commands.misc_cmds import otherCmds
+from Commands.command_testing import testingCmds
 from Commands.quota_cmds import (
-    patrolCmds,
     viewdataCommand,
     quotaCmds,
     quotablockCommands,
@@ -40,7 +38,7 @@ start_time = datetime.now()
 
 async def accept_loa(interaction: discord.Interaction, message: discord.Message):
     # Check if the context menu is used in the designated LoA channel
-    loa_channel_id = 1121081165697265684  # bot-testing
+    loa_channel_id = 1095845251081568276  # bot-testing
     if message.channel.id != loa_channel_id:
         return await interaction.response.send_message(
             embed=embedBuilder(
@@ -89,7 +87,7 @@ async def accept_loa(interaction: discord.Interaction, message: discord.Message)
 
 async def end_loa(interaction: discord.Interaction, message: discord.Message):
     # Check if the context menu is used in the designated LoA channel
-    loa_channel_id = 1121081165697265684  # bot-testing
+    loa_channel_id = 1095845251081568276  # bot-testing
     if message.channel.id != loa_channel_id:
         return await interaction.response.send_message(
             embed=embedBuilder(
@@ -161,11 +159,8 @@ async def on_ready():
     await bot.add_cog(serverconfigCmds(bot))
     await bot.add_cog(rolebindCmds(bot))
 
-    # misc_cmds.py
-    await bot.add_cog(otherCmds(bot, start_time))
 
     # quota_cmds.py
-    await bot.add_cog(patrolCmds(bot))
     await bot.add_cog(quotaCmds(bot))
     await bot.add_cog(viewdataCommand(bot))
     await bot.add_cog(quotablockCommands(bot))
@@ -178,10 +173,6 @@ async def on_ready():
 
     # command_testing.py
     await bot.add_cog(testingCmds(bot))
-    # await bot.add_cog(oldpatrolCmds(bot))
-
-    # strike_cmds.py
-    # await bot.add_cog(strikeCmds(bot))
 
     # Console output
     prfx = (Back.BLACK + Fore.BLUE) + Back.RESET + Fore.WHITE + Style.BRIGHT
@@ -209,25 +200,6 @@ async def on_ready():
         synced = []
     # Quota and notes output
     print(prfx + f"|| That is all for now. (Remove quota blocks for now)")
-
-    # Embed message
-    embed = discord.Embed(title="Bot Startup Info • InDev", color=discord.Color.green())
-    embed.add_field(name="Bot Name", value=bot.user.name, inline=True)
-    embed.add_field(name="Bot ID", value=bot.user.id, inline=True)
-    embed.add_field(
-        name="Runtime Information",
-        value=f"Discord Version: {discord.__version__} || Python Version: {platform.python_version()}",
-        inline=False,
-    )
-    embed.add_field(name="Synced Slash Commands", value=len(synced), inline=False)
-    embed.add_field(
-        name="Notes",
-        value="That is all for now. (Remove quota blocks for now).",
-        inline=False,
-    )
-
-    channel = bot.get_channel(1096146385830690866)  # Startup-channel ID
-    await channel.send(embed=embed)
 
 
 with open("token.json", "r") as f:
