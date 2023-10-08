@@ -16,15 +16,11 @@ model operative {
   userName    String     @unique
   rank        String
   profileLink String     @unique
-  activeLog   Boolean
-  activeLogID String     @unique
-  logs        logs[]
   response    response[]
 }
 
 model quotas {
-  rankName            String     @id @unique
-  logRequirement      String     
+  rankName            String     @id @unique  
   responseRequirement String
   quotaActive         Boolean     
 }
@@ -55,17 +51,6 @@ model ranks {
   rankName      String @unique
   discordRoleID String @id @unique
   RobloxRankID  String @unique
-}
-
-model logs {
-  logID              String     @id @unique
-  timeStarted        String
-  timeEnded          String
-  timeElapsed        String
-  logProof           String     @default("No proof provided")
-  Operative          operative? @relation(fields: [operativeDiscordID], references: [discordID])
-  operativeDiscordID String?
-  operativeName      String?
 }
 
 model server {
