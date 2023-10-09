@@ -131,9 +131,6 @@ async def registerOperator(discordUser:discord.Member, profileLink: str, name: s
             'userName': name,
             'rank': str(highest_role),
             'profileLink': profileLink,
-            'activeLog': False,
-            'activeLogID': f"NULL{random.randint(1000, 9999)}"
-
         })
         if operative is not None:
             await db.disconnect()

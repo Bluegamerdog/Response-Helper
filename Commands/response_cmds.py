@@ -678,7 +678,7 @@ class responseCmds(commands.GroupCog, group_name="response"):
     )
     @app_commands.describe(attendees='If somehow you had no attendees, just type "none" or "null".')
     async def conclude(
-        self, interaction: discord.Interaction, picture: discord.Attachment, attendees:str, co_hosts:str=None
+        self, interaction: discord.Interaction, attendees:str, co_hosts:str=None, picture: discord.Attachment = None
     ):
         serverConfig = await dbFuncs.fetch_config(interaction=interaction)
         if not checkPermission(
@@ -708,18 +708,23 @@ class responseCmds(commands.GroupCog, group_name="response"):
             repmsg: discord.Message = await channel.fetch_message(
                 int(response_data.responseID)
             )
-            rep_ann = repmsg.embeds[0]
-            if response_data.spontaneous == True:
-                rep_ann.description = f"### <:trubotTRU:1096226111458918470> Spontaneous {response_data.responseType} Response | Concluded"
-            else:
-                rep_ann.description = f"### <:trubotTRU:1096226111458918470> {response_data.responseType} Response | Concluded"
-            con_ann = discord.Embed(
-                description=f"### {interaction.user.mention}'s {response_data.responseType} Response has concluded!",
-                color=TRUCommandCOL,
-            )
-            con_ann.set_image(url=picture.url)
-            await repmsg.edit(embed=rep_ann)
-            await repmsg.reply(embed=con_ann)
+            if repmsg:
+                con_ann = discord.Embed(description=f"### {interaction.user.mention}'s {response_data.responseType} Response has concluded!",
+                color=TRUCommandCOL,)
+                
+                rep_ann = repmsg.embeds[0]
+                if rep_ann:
+                    if response_data.spontaneous == True:
+                        rep_ann.description = f"### <:trubotTRU:1096226111458918470> Spontaneous {response_data.responseType} Response | Concluded"
+                    else:
+                        rep_ann.description = f"### <:trubotTRU:1096226111458918470> {response_data.responseType} Response | Concluded"
+
+            if picture:
+                con_ann.set_image(url=picture.url)
+            if rep_ann and repmsg and repmsg.author == self.bot: #1096140994556215407
+                await repmsg.edit(embed=rep_ann)
+            if repmsg:
+                await repmsg.reply(embed=con_ann)
             await concludeResponse(interaction, str(response_data.responseID))
             
             if get_card_by_id(response_data.trellocardID):

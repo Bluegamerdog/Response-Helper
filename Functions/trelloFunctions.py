@@ -25,6 +25,8 @@ def get_trello_id(discord_id):
         "201525891271098368": "6242339da8b6bf73b65173b0",  # Seal
         "530249755264155649": "6363f1ca2bad7b022333d37f",  # DrWolf
         "313005277857185803": "5cb00cf689005359f8417948",  # Coco
+        "483788549460852749":"5c30dd4deef743243e988ec1", # Latte
+        "205381362910232576":"56b7b6b8e6afc8d2612991d1", # Dark
         "1053377038490292264": "624ee34ad745880bd6047956",  # Shush
     }
     return data.get(str(discord_id), None)
