@@ -3,8 +3,8 @@ from datetime import datetime
 from fuzzywuzzy import fuzz
 import time
 
-TRELLO_API_KEY = "611905fd240d63a804e36a4fe7c9654e"
-TOKEN = "ATTA69143a1d63dd6eebe2b03a5715125045652f744b225c8f2fe7fe140e728a08c24D72615E"
+TRELLO_API_KEY = "key"
+TOKEN = "toekn"
 
 trello = TrelloClient(api_key=TRELLO_API_KEY, token=TOKEN)
 responseBoardID = "6437e2978421d13cd9394a5d"
